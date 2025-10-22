@@ -38,7 +38,7 @@ body {
 .header-bar {
   background: var(--light-blue);
   background-image: var(--grid-pattern);
-  padding: 12px 20px;
+  padding: 20px 20px;
   display: flex;
   justify-content: space-between;
   align-items: center;
