@@ -1,0 +1,41 @@
+/* 폰트 정의 */
+
+/* 갈무리9 폰트 - 픽셀 아트 스타일 */
+@font-face {
+  font-family: 'Galmuri9';
+  src: url('../assets/fonts/Galmuri9.ttf') format('truetype');
+  font-weight: normal;
+  font-style: normal;
+  font-display: swap; /* 폰트 로딩 최적화 */
+}
+
+/* 나눔고딕 폰트 (폴백용) */
+@font-face {
+  font-family: 'NanumGothic';
+  src: url('../assets/fonts/NanumGothic.ttf') format('truetype');
+  font-weight: normal;
+  font-style: normal;
+}
+
+@font-face {
+  font-family: 'NanumGothic';
+  src: url('../assets/fonts/NanumGothic-Bold.ttf') format('truetype');
+  font-weight: bold;
+  font-style: normal;
+}
+
+/* 폰트 사용 예시 */
+.pixel-text {
+  font-family: 'Galmuri9', 'Courier New', monospace;
+}
+
+.korean-text {
+  font-family: 'Galmuri9', 'NanumGothic', 'Malgun Gothic', sans-serif;
+}
+
+.game-text {
+  font-family: 'Galmuri9', monospace;
+  image-rendering: pixelated;
+  image-rendering: -moz-crisp-edges;
+  image-rendering: crisp-edges;
+}
