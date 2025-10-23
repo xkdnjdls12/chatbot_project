@@ -191,16 +191,27 @@ function showDefaultResult() {
 
 // 결과 표시 업데이트
 function updateResultDisplay(result) {
+    console.log('📊 결과 표시 업데이트 시작:', result);
+    
     // PM 유형 업데이트
     const pmTypeElement = document.querySelector('.pm-type');
     if (pmTypeElement) {
         pmTypeElement.textContent = result.pmType;
+        console.log('✅ PM 유형 업데이트:', result.pmType);
     }
     
-    // 타입 설명 업데이트
+    // 간단 소개 업데이트 (summary 대신 간단 소개 사용)
+    const summaryElement = document.querySelector('.type-summary h3');
+    if (summaryElement && result.simpleIntro) {
+        summaryElement.textContent = result.simpleIntro;
+        console.log('✅ 간단 소개 업데이트:', result.simpleIntro);
+    }
+    
+    // 자세한 소개 업데이트 (description 대신 자세한 소개 사용)
     const typeDescription = document.querySelector('.type-description');
     if (typeDescription) {
-        typeDescription.textContent = result.description || result.typeDescription;
+        typeDescription.textContent = result.detailedIntro || result.description || result.typeDescription;
+        console.log('✅ 자세한 소개 업데이트:', result.detailedIntro || result.description);
     }
     
     // 유형별 이미지 업데이트
@@ -211,6 +222,9 @@ function updateResultDisplay(result) {
             console.log('🖼️ 유형별 이미지 업데이트:', result.image);
         }
     }
+    
+    // 호환성 정보 업데이트
+    updateCompatibilityInfo(result);
     
     // 피드백 타입에 따른 섹션 표시
     const feedbackType = localStorage.getItem('feedbackType');
@@ -223,7 +237,58 @@ function updateResultDisplay(result) {
         showWithoutReasonsSections(result);
     }
     
-    console.log('결과 표시 업데이트 완료:', result);
+    console.log('✅ 결과 표시 업데이트 완료:', result);
+}
+
+// 호환성 정보 업데이트
+function updateCompatibilityInfo(result) {
+    console.log('🔗 호환성 정보 업데이트 시작:', result);
+    
+    // 잘 어울리는 PM 업데이트
+    if (result.compatiblePM) {
+        const compatibleName = document.querySelector('.compatible-name');
+        const compatibleReason = document.querySelector('.compatible-reason');
+        const compatibleImage = document.querySelector('.compatible-image');
+        
+        if (compatibleName) {
+            compatibleName.textContent = result.compatiblePM;
+            console.log('✅ 잘 어울리는 PM 이름:', result.compatiblePM);
+        }
+        
+        if (compatibleReason) {
+            compatibleReason.textContent = result.compatiblePMReason || '잘 어울리는 PM입니다.';
+            console.log('✅ 잘 어울리는 PM 이유:', result.compatiblePMReason);
+        }
+        
+        if (compatibleImage && result.compatiblePMImage) {
+            compatibleImage.src = `images/avatars/${result.compatiblePMImage}`;
+            console.log('✅ 잘 어울리는 PM 이미지:', result.compatiblePMImage);
+        }
+    }
+    
+    // 성향이 다른 PM 업데이트
+    if (result.incompatiblePM) {
+        const incompatibleName = document.querySelector('.incompatible-name');
+        const incompatibleReason = document.querySelector('.incompatible-reason');
+        const incompatibleImage = document.querySelector('.incompatible-image');
+        
+        if (incompatibleName) {
+            incompatibleName.textContent = result.incompatiblePM;
+            console.log('✅ 성향이 다른 PM 이름:', result.incompatiblePM);
+        }
+        
+        if (incompatibleReason) {
+            incompatibleReason.textContent = result.incompatiblePMReason || '성향이 다른 PM입니다.';
+            console.log('✅ 성향이 다른 PM 이유:', result.incompatiblePMReason);
+        }
+        
+        if (incompatibleImage && result.incompatiblePMImage) {
+            incompatibleImage.src = `images/avatars/${result.incompatiblePMImage}`;
+            console.log('✅ 성향이 다른 PM 이미지:', result.incompatiblePMImage);
+        }
+    }
+    
+    console.log('✅ 호환성 정보 업데이트 완료');
 }
 
 // 이유 작성된 경우 섹션 표시
