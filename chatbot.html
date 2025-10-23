@@ -40,13 +40,30 @@
             </div>
             
             <!-- 선택 버튼들 -->
-            <div class="choices-section">
+            <div class="choices-section" id="initialChoices">
                 <button class="choice-button" data-choice="1">
                     최근 제품을 직접 써보면서 어디서 불편함이 느껴지는지 감을 잡아보자!
                 </button>
                 <button class="choice-button" data-choice="2">
                     최근 제품을 직접 써보면서 어디서 불편함이 느껴지는지 감을 잡아보자!
                 </button>
+            </div>
+            
+            <!-- 선택 후 액션 버튼들 (숨김) -->
+            <div class="action-buttons-section" id="actionButtons" style="display: none;">
+                <button class="action-button primary" id="reasonInputBtn">이유 입력하기</button>
+                <button class="action-button secondary" id="nextBtn">다음으로</button>
+            </div>
+            
+            <!-- 이유 입력 프롬프트 창 (숨김) -->
+            <div class="input-prompt-section" id="inputPrompt" style="display: none;">
+                <div class="prompt-box">
+                    <p class="prompt-text">최근 제품을 직접 써보면서 어디서 불편함이 느껴지는지 감을 잡아보자!</p>
+                    <div class="input-container">
+                        <input type="text" id="reasonInput" placeholder="| 이유를 입력하면, 나만의 PM 유형 분석 완료!" class="reason-input">
+                        <button class="submit-btn" id="submitReason">→</button>
+                    </div>
+                </div>
             </div>
             
             <!-- 로딩 표시 (숨김) -->
@@ -57,6 +74,7 @@
         </div>
     </div>
     
+    <script src="js/load-env.js"></script>
     <script src="js/chatbot.js"></script>
 </body>
 </html>
