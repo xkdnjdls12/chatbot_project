@@ -90,6 +90,10 @@ function loadAnalysisResult() {
     try {
         console.log('🔍 분석 결과 로드 시작...');
         
+        // 피드백 타입 확인
+        const feedbackType = localStorage.getItem('feedbackType');
+        console.log('📋 피드백 타입:', feedbackType);
+        
         // 로컬 스토리지에서 분석 결과 가져오기
         const analysisResult = localStorage.getItem('analysisResult');
         console.log('📊 저장된 분석 결과:', analysisResult);
@@ -100,9 +104,18 @@ function loadAnalysisResult() {
             return;
         }
         
-        // AI 분석 결과 파싱
-        console.log('🔧 분석 결과 파싱 중...');
-        const parsedResult = parseAIResult(analysisResult);
+        let parsedResult;
+        
+        if (feedbackType === 'withReasons') {
+            // 이유 작성된 경우 - AI 분석 결과 파싱
+            console.log('🤖 AI 분석 결과 파싱 중...');
+            parsedResult = parseAIResult(analysisResult);
+        } else {
+            // 이유 미작성된 경우 - 고정값 피드백 파싱
+            console.log('📋 고정값 피드백 파싱 중...');
+            parsedResult = JSON.parse(analysisResult);
+        }
+        
         console.log('✅ 파싱된 결과:', parsedResult);
         
         // 결과 데이터를 화면에 적용
@@ -116,6 +129,8 @@ function loadAnalysisResult() {
 
 // AI 분석 결과 파싱
 function parseAIResult(aiResult) {
+    console.log('🔧 AI 분석 결과 파싱 시작:', aiResult);
+    
     const lines = aiResult.split('\n');
     const result = {
         pmType: '알파메일 PM', // 기본값
@@ -128,29 +143,35 @@ function parseAIResult(aiResult) {
     
     lines.forEach(line => {
         const trimmedLine = line.trim();
+        console.log('📝 파싱 중인 라인:', trimmedLine);
         
-        if (trimmedLine.startsWith('PM유형:')) {
-            result.pmType = trimmedLine.replace('PM유형:', '').trim();
-        } else if (trimmedLine.startsWith('AI맞춤분석:')) {
+        if (trimmedLine.startsWith('AI맞춤분석:')) {
             result.aiAnalysis = trimmedLine.replace('AI맞춤분석:', '').trim();
+            console.log('✅ AI 맞춤 분석 추출:', result.aiAnalysis);
         } else if (trimmedLine.startsWith('나만의강점:')) {
             result.strengths = trimmedLine.replace('나만의강점:', '').trim();
+            console.log('✅ 나만의 강점 추출:', result.strengths);
         } else if (trimmedLine.startsWith('내가보완할부분:')) {
             result.improvements = trimmedLine.replace('내가보완할부분:', '').trim();
+            console.log('✅ 내가 보완할 부분 추출:', result.improvements);
         }
     });
     
     // 빈 값이면 기본값 사용
     if (!result.aiAnalysis) {
         result.aiAnalysis = '높은 추진력과 결단력을 기반으로 목표를 명확히 설정하고 신속하게 실행하는 성과 중심형 리더십을 보유.';
+        console.log('⚠️ AI 맞춤 분석 기본값 사용');
     }
     if (!result.strengths) {
         result.strengths = '높은 추진력과 결단력을 기반으로 목표를 명확히 설정하고 신속하게 실행하는 성과 중심형 리더십을 보유.';
+        console.log('⚠️ 나만의 강점 기본값 사용');
     }
     if (!result.improvements) {
         result.improvements = '성과 중심 사고로 인해 공감과 피드백 수용이 다소 부족할 수 있음. 팀원 의견 반영과 소통 강화를 통해 리더십 균형 향상이 필요함.';
+        console.log('⚠️ 내가 보완할 부분 기본값 사용');
     }
     
+    console.log('✅ 최종 파싱 결과:', result);
     return result;
 }
 
@@ -179,26 +200,94 @@ function updateResultDisplay(result) {
     // 타입 설명 업데이트
     const typeDescription = document.querySelector('.type-description');
     if (typeDescription) {
-        typeDescription.textContent = result.description;
+        typeDescription.textContent = result.description || result.typeDescription;
     }
     
-    // AI 분석 업데이트
-    const aiAnalysisBox = document.querySelector('.analysis-box.ai-analysis p');
-    if (aiAnalysisBox) {
-        aiAnalysisBox.textContent = result.aiAnalysis;
+    // 유형별 이미지 업데이트
+    if (result.image) {
+        const characterImage = document.querySelector('.result-character');
+        if (characterImage) {
+            characterImage.src = `images/avatars/${result.image}`;
+            console.log('🖼️ 유형별 이미지 업데이트:', result.image);
+        }
     }
     
-    // 강점 업데이트
-    const strengthsBox = document.querySelector('.analysis-box.strengths p');
-    if (strengthsBox) {
-        strengthsBox.textContent = result.strengths;
-    }
+    // 피드백 타입에 따른 섹션 표시
+    const feedbackType = localStorage.getItem('feedbackType');
     
-    // 보완점 업데이트
-    const improvementsBox = document.querySelector('.analysis-box.improvements p');
-    if (improvementsBox) {
-        improvementsBox.textContent = result.improvements;
+    if (feedbackType === 'withReasons') {
+        // 이유 작성된 경우 - AI 맞춤 분석, 나만의 강점, 내가 보완할 부분
+        showWithReasonsSections(result);
+    } else {
+        // 이유 미작성된 경우 - 강점, 보완할 부분
+        showWithoutReasonsSections(result);
     }
     
     console.log('결과 표시 업데이트 완료:', result);
+}
+
+// 이유 작성된 경우 섹션 표시
+function showWithReasonsSections(result) {
+    // AI 분석 섹션 표시
+    const aiAnalysisBox = document.querySelector('.analysis-box.ai-analysis');
+    if (aiAnalysisBox) {
+        aiAnalysisBox.style.display = 'block';
+        const aiAnalysisText = aiAnalysisBox.querySelector('p');
+        if (aiAnalysisText) {
+            aiAnalysisText.textContent = result.aiAnalysis;
+        }
+    }
+    
+    // 강점 섹션 표시
+    const strengthsBox = document.querySelector('.analysis-box.strengths');
+    if (strengthsBox) {
+        strengthsBox.style.display = 'block';
+        const strengthsText = strengthsBox.querySelector('p');
+        if (strengthsText) {
+            strengthsText.textContent = result.strengths;
+        }
+    }
+    
+    // 보완점 섹션 표시
+    const improvementsBox = document.querySelector('.analysis-box.improvements');
+    if (improvementsBox) {
+        improvementsBox.style.display = 'block';
+        const improvementsText = improvementsBox.querySelector('p');
+        if (improvementsText) {
+            improvementsText.textContent = result.improvements;
+        }
+    }
+}
+
+// 이유 미작성된 경우 섹션 표시
+function showWithoutReasonsSections(result) {
+    console.log('📋 고정값 피드백 표시:', result);
+    
+    // AI 분석 섹션 숨기기
+    const aiAnalysisBox = document.querySelector('.analysis-box.ai-analysis');
+    if (aiAnalysisBox) {
+        aiAnalysisBox.style.display = 'none';
+    }
+    
+    // 강점 섹션 표시
+    const strengthsBox = document.querySelector('.analysis-box.strengths');
+    if (strengthsBox) {
+        strengthsBox.style.display = 'block';
+        const strengthsText = strengthsBox.querySelector('p');
+        if (strengthsText) {
+            console.log('💪 강점 텍스트 설정:', result.strengths);
+            strengthsText.textContent = result.strengths || '강점 정보를 불러올 수 없습니다.';
+        }
+    }
+    
+    // 보완점 섹션 표시
+    const improvementsBox = document.querySelector('.analysis-box.improvements');
+    if (improvementsBox) {
+        improvementsBox.style.display = 'block';
+        const improvementsText = improvementsBox.querySelector('p');
+        if (improvementsText) {
+            console.log('🔧 보완점 텍스트 설정:', result.improvements);
+            improvementsText.textContent = result.improvements || '보완점 정보를 불러올 수 없습니다.';
+        }
+    }
 }

@@ -126,12 +126,169 @@ function showReasonInput() {
 
 // 다음으로 진행
 function proceedToNext() {
+    // "다음으로" 버튼 클릭 시 공백으로 처리
+    userReasons.push({
+        scenario: currentScenario,
+        choice: userChoices[userChoices.length - 1].text,
+        reason: '', // 공백 처리
+        timestamp: new Date().toISOString()
+    });
+    
+    console.log('다음으로 버튼 클릭 - 공백 처리됨');
+    
+    // 로컬 스토리지에 사용자 데이터 저장
+    const userData = {
+        choices: userChoices,
+        reasons: userReasons,
+        timestamp: new Date().toISOString()
+    };
+    localStorage.setItem('userTestData', JSON.stringify(userData));
+    console.log('💾 사용자 데이터 저장 완료 (공백 포함):', userData);
+    
     // 다음 시나리오로 진행
     currentScenario++;
     updateScenario();
     
     // UI 초기화
     resetUI();
+}
+
+// 욕설 및 비속어 검증
+function containsInappropriateLanguage(text) {
+    const inappropriateWords = [
+        '존나', '개같이', '씨발', '좆', '병신', '미친', '빡쳐', '짜증', '개', '놈', '새끼',
+        '바보', '멍청이', '등신', '꺼져', '닥쳐', '죽어', '빌어먹을', '지랄', '개소리'
+    ];
+    
+    const lowerText = text.toLowerCase();
+    return inappropriateWords.some(word => lowerText.includes(word));
+}
+
+// 유의미도 점수 계산
+function calculateMeaningfulnessScore(text, scenario) {
+    // 관련성 (40%)
+    const relevanceScore = calculateRelevanceScore(text, scenario);
+    
+    // 구체성 (30%)
+    const specificityScore = calculateSpecificityScore(text);
+    
+    // 일관성 (15%)
+    const consistencyScore = calculateConsistencyScore(text);
+    
+    // 건전성 (15%)
+    const healthinessScore = calculateHealthinessScore(text);
+    
+    const totalScore = (relevanceScore * 0.4) + (specificityScore * 0.3) + 
+                      (consistencyScore * 0.15) + (healthinessScore * 0.15);
+    
+    console.log(`유의미도 점수: 관련성(${relevanceScore}) + 구체성(${specificityScore}) + 일관성(${consistencyScore}) + 건전성(${healthinessScore}) = ${totalScore.toFixed(2)}`);
+    
+    return totalScore;
+}
+
+// 관련성 점수 계산
+function calculateRelevanceScore(text, scenario) {
+    const scenarioKeywords = {
+        1: ['문제', '해결', '분석', '데이터', '직접', '경험', '사용자', '제품', '매출', '이탈'],
+        2: ['출시', '시장', '경쟁', '품질', '테스트', '브랜드', '완벽', '빠르게'],
+        3: ['팀', '갈등', '의견', '조율', '소통', '협력', '입장', '차이'],
+        4: ['목표', '일정', '업무', '완성도', '속도', '팀원', '분위기', '야근'],
+        5: ['목표', '유저', '만족도', '성과', '가치', '사용자', '신규']
+    };
+    
+    const keywords = scenarioKeywords[scenario] || [];
+    const textLower = text.toLowerCase();
+    const matchedKeywords = keywords.filter(keyword => textLower.includes(keyword));
+    
+    return Math.min(10, (matchedKeywords.length / keywords.length) * 10);
+}
+
+// 구체성 점수 계산
+function calculateSpecificityScore(text) {
+    // 구체적인 행위, 대상, 도구 언급 여부
+    const specificIndicators = [
+        /\d+/, // 숫자
+        /[가-힣]+(을|를|이|가|은|는)/, // 구체적 명사
+        /(방법|과정|절차|단계|기술|도구|시스템)/, // 구체적 방법
+        /(경험|경력|실무|프로젝트|팀|회사)/ // 구체적 경험
+    ];
+    
+    const matches = specificIndicators.filter(pattern => pattern.test(text));
+    return Math.min(10, (matches.length / specificIndicators.length) * 10);
+}
+
+// 일관성 점수 계산
+function calculateConsistencyScore(text) {
+    // 문법적 일관성과 문맥의 자연스러움
+    const sentences = text.split(/[.!?]/).filter(s => s.trim().length > 0);
+    if (sentences.length === 0) return 0;
+    
+    // 문장 길이의 적절성
+    const avgLength = sentences.reduce((sum, s) => sum + s.length, 0) / sentences.length;
+    const lengthScore = avgLength >= 5 && avgLength <= 30 ? 5 : 2;
+    
+    // 문법적 요소 (주어, 서술어 등)
+    const grammarScore = text.includes('을') || text.includes('를') || text.includes('이') || text.includes('가') ? 5 : 2;
+    
+    return lengthScore + grammarScore;
+}
+
+// 건전성 점수 계산
+function calculateHealthinessScore(text) {
+    // 조롱, 스팸, 무관 주제 여부
+    const spamIndicators = ['광고', '홍보', '구매', '할인', '이벤트', '추천', '링크', '사이트'];
+    const irrelevantIndicators = ['점심', '저녁', '식사', '날씨', '여행', '영화', '음악', '게임'];
+    
+    const textLower = text.toLowerCase();
+    const hasSpam = spamIndicators.some(indicator => textLower.includes(indicator));
+    const hasIrrelevant = irrelevantIndicators.some(indicator => textLower.includes(indicator));
+    
+    if (hasSpam || hasIrrelevant) return 2;
+    if (containsInappropriateLanguage(text)) return 0;
+    
+    return 10;
+}
+
+// 검증 에러 표시
+function showValidationError(message) {
+    // 기존 에러 메시지 제거
+    const existingError = document.querySelector('.validation-error');
+    if (existingError) {
+        existingError.remove();
+    }
+    
+    // 에러 메시지 생성
+    const errorDiv = document.createElement('div');
+    errorDiv.className = 'validation-error';
+    errorDiv.style.cssText = `
+        background-color: #fee;
+        border: 2px solid #fcc;
+        border-radius: 8px;
+        padding: 10px;
+        margin: 10px 0;
+        color: #c33;
+        font-size: 14px;
+        text-align: center;
+        animation: shake 0.5s ease-in-out;
+    `;
+    errorDiv.textContent = message;
+    
+    // 입력 필드 위에 에러 메시지 삽입
+    const inputContainer = document.querySelector('.input-container');
+    inputContainer.parentNode.insertBefore(errorDiv, inputContainer);
+    
+    // 입력 필드 포커스 및 하이라이트
+    const reasonInput = document.getElementById('reasonInput');
+    reasonInput.style.borderColor = '#fcc';
+    reasonInput.focus();
+    
+    // 3초 후 에러 메시지 자동 제거
+    setTimeout(() => {
+        if (errorDiv.parentNode) {
+            errorDiv.remove();
+        }
+        reasonInput.style.borderColor = '';
+    }, 3000);
 }
 
 // 사용자 이유 제출
@@ -141,6 +298,36 @@ async function submitUserReason() {
     
     if (!reason) {
         alert('이유를 입력해주세요.');
+        return;
+    }
+    
+    // 1. 공백 검증
+    if (!reason || reason.trim() === '') {
+        alert('이유를 입력해주세요.');
+        return;
+    }
+    
+    // 2. 욕설 및 비속어 검증
+    if (containsInappropriateLanguage(reason)) {
+        showValidationError('부적절한 표현이 섞여있습니다. 다시 작성해주세요.');
+        return;
+    }
+    
+    // 3. 글자 수 제한 확인 (5글자 이상 50글자 이하)
+    if (reason.length < 5) {
+        showValidationError('답변의 길이가 부적절합니다. 답변은 공백 제외 5 ~ 50글자 사이로 작성해주세요.');
+        return;
+    }
+    
+    if (reason.length > 50) {
+        showValidationError('답변의 길이가 부적절합니다. 답변은 공백 제외 5 ~ 50글자 사이로 작성해주세요.');
+        return;
+    }
+    
+    // 4. 유의미도 검증
+    const meaningfulnessScore = calculateMeaningfulnessScore(reason, currentScenario);
+    if (meaningfulnessScore < 7) {
+        showValidationError('답변을 분석하지 못하였습니다. 다시 작성해주세요.');
         return;
     }
     
