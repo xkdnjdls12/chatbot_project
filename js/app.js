@@ -21,14 +21,8 @@ document.addEventListener('DOMContentLoaded', function() {
 
 // 챗봇 테스트 시작 함수
 function startChatbotTest() {
-    // 현재는 알림으로 표시 (나중에 챗봇 페이지로 이동하도록 수정)
-    alert('챗봇 테스트가 시작됩니다! (GPT API 연동 예정)');
-    
-    // TODO: 나중에 챗봇 페이지로 이동하는 로직 구현
-    // window.location.href = 'chatbot.html';
-    
-    // 또는 현재 페이지에서 챗봇 UI를 표시하는 로직 구현
-    // showChatbotInterface();
+    // 챗봇 페이지로 이동
+    window.location.href = 'chatbot.html';
 }
 
 // 챗봇 인터페이스 표시 함수 (향후 구현)
