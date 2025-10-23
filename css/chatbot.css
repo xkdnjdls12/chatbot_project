@@ -118,6 +118,8 @@
     border-color: #4A90E2;
 }
 
+
+
 /* 액션 버튼 섹션 */
 .action-buttons-section {
     display: flex;
@@ -163,7 +165,20 @@
 
 /* 이유 입력 프롬프트 섹션 */
 .input-prompt-section {
+    margin-top: 20px;
     margin-bottom: 20px;
+    animation: slideDown 0.3s ease;
+}
+
+@keyframes slideDown {
+    from {
+        opacity: 0;
+        transform: translateY(-10px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
 }
 
 .prompt-box {

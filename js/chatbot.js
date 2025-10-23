@@ -144,23 +144,11 @@ async function submitUserReason() {
     
     console.log('사용자 입력 이유:', reason);
     
-    // 로딩 표시
-    showLoading();
+    // 입력 프롬프트 숨기기
     document.getElementById('inputPrompt').style.display = 'none';
     
-    try {
-        // OpenAI API로 이유 분석
-        const analysis = await analyzeUserReason(reason);
-        
-        // 분석 결과 처리
-        handleReasonAnalysis(analysis);
-        
-    } catch (error) {
-        console.error('분석 오류:', error);
-        showError('분석 중 오류가 발생했습니다. 다시 시도해주세요.');
-    } finally {
-        hideLoading();
-    }
+    // 다음 시나리오로 진행
+    proceedToNext();
 }
 
 // 사용자 이유 분석 함수
@@ -254,15 +242,28 @@ function updateScenario() {
     const scenarios = [
         {
             title: "오마이갓! 아침부터..",
-            description: "아침에 출근을 하니 우리 회사 상품의 매출이 급감했다는 보고를 받았다. 빠르게 해결하지 않으면 큰 손해를 입을 수도 있는 상황....! 문제의 이유를 어떻게 찾아볼까?"
+            description: "아침에 출근을 하니 우리 회사 상품의 매출이 급감했다는 보고를 받았다. 빠르게 해결하지 않으면 큰 손해를 입을 수도 있는 상황....! 문제의 이유를 어떻게 찾아볼까?",
+            character: "char4.png"
         },
         {
-            title: "좋은 접근이야!",
-            description: "제품을 직접 사용해보니 몇 가지 문제점을 발견했다. 이제 이 문제들을 어떻게 해결할지 결정해야 한다. 어떤 방향으로 나아갈까?"
+            title: "휴.. 급한 불은 껐다...",
+            description: "다행히 빠르게 문제를 해결해 큰 손해는 막았다. 오전 10시 회의가 있었지? 얼른 가보자. 경쟁사도 같은 상품을 낸다는데, 어떻게 할까?",
+            character: "char5.png"
         },
         {
-            title: "팀과의 협업",
-            description: "개발팀과 디자인팀에게 문제점을 공유했다. 이제 함께 해결책을 찾아야 한다. 어떤 방식으로 팀을 이끌어갈까?"
+            title: "회의실에서의 논의",
+            description: "팀원들과 함께 회의를 진행하고 있다. 각자 다른 의견을 제시하고 있는데, 어떤 방향으로 결정을 내려야 할까?",
+            character: "char4.png"
+        },
+        {
+            title: "고객 피드백 수집",
+            description: "실제 고객들의 의견을 들어보니 예상과 다른 반응들이 나오고 있다. 이 상황에서 어떻게 대응해야 할까?",
+            character: "char5.png"
+        },
+        {
+            title: "최종 결정의 순간",
+            description: "모든 정보를 종합해보니 이제 최종 결정을 내려야 할 때다. 어떤 선택을 하면 좋을까?",
+            character: "char4.png"
         }
     ];
     
@@ -271,11 +272,22 @@ function updateScenario() {
         document.querySelector('.scenario-title').textContent = scenario.title;
         document.querySelector('.scenario-description').textContent = scenario.description;
         
+        // 캐릭터 이미지 업데이트
+        if (scenario.character) {
+            document.querySelector('.character-image').src = `images/avatars/${scenario.character}`;
+        }
+        
+        // 선택지 업데이트
+        updateChoices();
+        
+        // 시간 업데이트
+        updateTime();
+        
         // 진행 상황 업데이트
         updateProgress();
     } else {
-        // 게임 종료
-        showGameEnd();
+        // 모든 시나리오 완료 - 종합 분석
+        showFinalAnalysis();
     }
 }
 
@@ -284,15 +296,23 @@ function updateChoices() {
     const choiceSets = [
         [
             "최근 제품을 직접 써보면서 어디서 불편함이 느껴지는지 감을 잡아보자!",
-            "고객 피드백 데이터를 분석해서 문제점을 찾아보자!"
+            "데이터를 먼저 확인해서 어떤 단계에서 이탈이 발생했는지 분석해보자!"
         ],
         [
-            "개발팀과 함께 기술적 해결책을 찾아보자!",
-            "마케팅팀과 함께 고객 커뮤니케이션을 개선해보자!"
+            "시장을 빠르게 점유하는 것이 중요해! 완벽하지 않더라도 경쟁사보다 빠르게 출시해보자.",
+            "출시만 서두르다 우리 브랜드 이미지가 떨어질 수도 있어. 충분한 테스트 후에 퀄리티 있는 상품으로 출시하는 것이 맞지."
         ],
         [
-            "사용자 테스트를 통해 개선점을 찾아보자!",
-            "경쟁사 분석을 통해 차별화 포인트를 찾아보자!"
+            "팀원들의 의견을 모두 들어보고 합의점을 찾아보자.",
+            "빠른 결정이 필요하니 리더십을 발휘해서 방향을 제시하자."
+        ],
+        [
+            "고객의 의견을 더 자세히 들어보고 개선점을 찾아보자.",
+            "현재 상황을 정확히 파악하고 단계적으로 접근해보자."
+        ],
+        [
+            "모든 정보를 종합해서 신중하게 결정하자.",
+            "직감과 경험을 바탕으로 빠르게 결정하자."
         ]
     ];
     
@@ -304,6 +324,22 @@ function updateChoices() {
             button.textContent = choices[index] || "다음 단계로 진행";
             button.classList.remove('selected');
         });
+    }
+}
+
+// 시간 업데이트
+function updateTime() {
+    const timeElement = document.querySelector('.time');
+    const times = [
+        '09:00 AM',
+        '09:55 AM',
+        '10:30 AM',
+        '11:15 AM',
+        '12:00 PM'
+    ];
+    
+    if (currentScenario <= times.length) {
+        timeElement.textContent = times[currentScenario - 1];
     }
 }
 
@@ -386,30 +422,109 @@ function resetUI() {
 }
 
 // 게임 종료
-function showGameEnd() {
+// 종합 분석 화면
+async function showFinalAnalysis() {
     const scenarioSection = document.querySelector('.scenario-section');
     scenarioSection.innerHTML = `
-        <div class="game-end">
-            <h2>🎉 축하합니다!</h2>
-            <p>PM 듬이의 하루를 성공적으로 완료했습니다!</p>
-            <div class="final-summary">
-                <h3>📊 최종 분석 결과</h3>
-                <p>당신의 선택들:</p>
-                <ul>
-                    ${userChoices.map(choice => `<li>${choice.text}</li>`).join('')}
-                </ul>
-                <p>입력하신 이유들:</p>
-                <ul>
-                    ${userReasons.map(reason => `<li>${reason.reason}</li>`).join('')}
-                </ul>
-            </div>
-            <button onclick="location.href='index.html'" class="start-button">다시 시작하기</button>
+        <div class="final-analysis">
+            <h3>🎯 PM 유형 분석 중...</h3>
+            <p>모든 답변을 종합하여 분석하고 있습니다.</p>
+            <div class="loading-spinner"></div>
         </div>
     `;
     
+    // 다른 섹션들 숨기기
     document.querySelector('.choices-section').style.display = 'none';
     document.querySelector('.action-buttons-section').style.display = 'none';
     document.querySelector('.character-section').style.display = 'none';
+    
+    try {
+        // 종합 분석 요청
+        const analysis = await analyzeAllReasons();
+        
+        // 분석 결과 표시
+        displayFinalAnalysis(analysis);
+        
+    } catch (error) {
+        console.error('종합 분석 오류:', error);
+        showAnalysisError();
+    }
+}
+
+// 모든 이유 종합 분석
+async function analyzeAllReasons() {
+    const allReasons = userReasons.map(reason => 
+        `시나리오 ${reason.scenario}: ${reason.reason}`
+    ).join('\n');
+    
+    const messages = [
+        {
+            role: "system",
+            content: "당신은 PM 전문가입니다. 사용자가 5개 시나리오에서 입력한 모든 답변을 종합하여 PM 유형을 분석하고, 장단점과 개선 방향을 제시해주세요. 한국어로 응답하세요."
+        },
+        {
+            role: "user",
+            content: `사용자가 입력한 모든 답변들:\n${allReasons}\n\n이 모든 답변을 종합하여 PM 유형을 분석하고, 장단점과 개선 방향을 제시해주세요.`
+        }
+    ];
+    
+    const requestBody = {
+        model: "gpt-3.5-turbo",
+        messages: messages,
+        max_tokens: 1000,
+        temperature: 0.7
+    };
+    
+    const response = await fetch(OPENAI_API_URL, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${OPENAI_API_KEY}`
+        },
+        body: JSON.stringify(requestBody)
+    });
+    
+    if (!response.ok) {
+        throw new Error(`API 호출 실패: ${response.status}`);
+    }
+    
+    const data = await response.json();
+    return data.choices[0].message.content;
+}
+
+// 최종 분석 결과 표시
+function displayFinalAnalysis(analysis) {
+    const scenarioSection = document.querySelector('.scenario-section');
+    scenarioSection.innerHTML = `
+        <div class="final-analysis-result">
+            <h3>🎯 PM 유형 분석 결과</h3>
+            <div class="analysis-content">
+                ${analysis}
+            </div>
+            <div class="user-reasons-summary">
+                <h4>📝 입력한 답변들:</h4>
+                <ul>
+                    ${userReasons.map((reason, index) => 
+                        `<li><strong>시나리오 ${reason.scenario}:</strong> ${reason.reason}</li>`
+                    ).join('')}
+                </ul>
+            </div>
+            <button onclick="location.href='index.html'" class="action-button primary">메인으로 돌아가기</button>
+        </div>
+    `;
+}
+
+// 분석 오류 표시
+function showAnalysisError() {
+    const scenarioSection = document.querySelector('.scenario-section');
+    scenarioSection.innerHTML = `
+        <div class="analysis-error">
+            <h3>❌ 분석 오류</h3>
+            <p>분석 중 오류가 발생했습니다. 다시 시도해주세요.</p>
+            <button onclick="location.reload()" class="action-button primary">다시 시도</button>
+            <button onclick="location.href='index.html'" class="action-button secondary">메인으로 돌아가기</button>
+        </div>
+    `;
 }
 
 // API 키 에러 표시
