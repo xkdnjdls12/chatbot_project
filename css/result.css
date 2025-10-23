@@ -12,7 +12,7 @@
 .result-card {
     background: white;
     border-radius: 20px;
-    padding: 30px;
+    padding: 25px;
     max-width: 500px;
     width: 100%;
     box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
@@ -21,7 +21,7 @@
 
 /* 결과 헤더 */
 .result-header {
-    margin-bottom: 20px;
+    margin-bottom: 15px;
 }
 
 .result-header h2 {
@@ -39,11 +39,11 @@
 
 /* 캐릭터 섹션 */
 .character-section {
-    margin: 20px 0;
+    margin: 15px 0;
 }
 
 .result-character {
-    width: 200px;
+    width: 150px;
     height: auto;
     border-radius: 15px;
     border: 3px solid #4A90E2;
@@ -54,8 +54,8 @@
 .type-summary {
     background: #f8f9fa;
     border-radius: 15px;
-    padding: 20px;
-    margin: 20px 0;
+    padding: 15px;
+    margin: 15px 0;
     border: 2px solid #e9ecef;
 }
 
@@ -79,7 +79,7 @@
 
 /* 액션 버튼들 */
 .action-buttons {
-    margin: 30px 0;
+    margin: 20px 0;
     display: flex;
     flex-direction: column;
     gap: 10px;
@@ -119,15 +119,15 @@
 
 /* 분석 섹션 */
 .analysis-section {
-    margin: 30px 0;
+    margin: 20px 0;
     text-align: left;
 }
 
 .analysis-box {
     background: white;
     border-radius: 12px;
-    padding: 20px;
-    margin: 15px 0;
+    padding: 15px;
+    margin: 10px 0;
     border: 2px solid #e9ecef;
     box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
 }
@@ -154,48 +154,50 @@
 /* 호환성 섹션 */
 .compatibility-section {
     display: flex;
-    gap: 15px;
-    margin: 30px 0;
+    gap: 10px;
+    margin: 20px 0;
 }
 
 .compatibility-card {
     flex: 1;
     background: white;
-    border-radius: 12px;
-    padding: 15px;
-    border: 2px solid #e9ecef;
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+    border-radius: 8px;
+    padding: 10px;
+    border: 1px solid #e9ecef;
+    box-shadow: 0 1px 4px rgba(0, 0, 0, 0.05);
     text-align: center;
 }
 
 .compatibility-card h4 {
-    font-size: 14px;
+    font-size: 12px;
     font-weight: bold;
     color: #4A90E2;
-    margin-bottom: 10px;
+    margin-bottom: 8px;
 }
 
 .compatibility-character {
-    margin: 10px 0;
+    margin: 8px 0;
 }
 
-.compat-char {
-    width: 80px;
-    height: 80px;
-    border-radius: 10px;
-    border: 2px solid #4A90E2;
+.compatibility-character img {
+    width: 50px;
+    height: 50px;
+    border-radius: 8px;
+    border: 1px solid #4A90E2;
+    object-fit: cover;
 }
 
 .compatibility-card h5 {
-    font-size: 12px;
+    font-size: 10px;
     color: #333;
-    margin: 5px 0;
+    margin: 4px 0;
+    font-weight: bold;
 }
 
 .compatibility-card p {
-    font-size: 11px;
+    font-size: 9px;
     color: #666;
-    line-height: 1.4;
+    line-height: 1.3;
     margin: 0;
 }
 
@@ -227,11 +229,11 @@
     
     .compatibility-section {
         flex-direction: column;
-        gap: 10px;
+        gap: 8px;
     }
     
-    .compat-char {
-        width: 60px;
-        height: 60px;
+    .compatibility-character img {
+        width: 40px;
+        height: 40px;
     }
 }
