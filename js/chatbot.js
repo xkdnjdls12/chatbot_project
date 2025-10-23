@@ -106,6 +106,15 @@ function handleInitialChoice(button) {
 
 // 이유 입력 창 표시
 function showReasonInput() {
+    // 선택한 선택지 텍스트 가져오기
+    const selectedChoice = userChoices[userChoices.length - 1];
+    const promptText = document.querySelector('.prompt-text');
+    
+    // 프롬프트 텍스트를 선택한 선택지로 업데이트
+    if (promptText && selectedChoice) {
+        promptText.textContent = selectedChoice.text;
+    }
+    
     document.getElementById('actionButtons').style.display = 'none';
     document.getElementById('inputPrompt').style.display = 'block';
     
@@ -138,11 +147,21 @@ async function submitUserReason() {
     // 사용자 이유 저장
     userReasons.push({
         scenario: currentScenario,
+        choice: userChoices[userChoices.length - 1].text,
         reason: reason,
         timestamp: new Date().toISOString()
     });
     
     console.log('사용자 입력 이유:', reason);
+    
+    // 로컬 스토리지에 사용자 데이터 저장
+    const userData = {
+        choices: userChoices,
+        reasons: userReasons,
+        timestamp: new Date().toISOString()
+    };
+    localStorage.setItem('userTestData', JSON.stringify(userData));
+    console.log('💾 사용자 데이터 저장 완료:', userData);
     
     // 입력 프롬프트 숨기기
     document.getElementById('inputPrompt').style.display = 'none';
@@ -251,19 +270,19 @@ function updateScenario() {
             character: "char5.png"
         },
         {
-            title: "회의실에서의 논의",
-            description: "팀원들과 함께 회의를 진행하고 있다. 각자 다른 의견을 제시하고 있는데, 어떤 방향으로 결정을 내려야 할까?",
-            character: "char4.png"
+            title: "이건 또 무슨일이야 ㅠㅠㅠㅠ",
+            description: "회의를 마치고 돌아오니 사무실이 소란스럽다. 디자이너와 개발자가 애니메이션 기능을 두고 갈등 중이다. 당신이 입을 연다.",
+            character: "char6.png"
         },
         {
-            title: "고객 피드백 수집",
-            description: "실제 고객들의 의견을 들어보니 예상과 다른 반응들이 나오고 있다. 이 상황에서 어떻게 대응해야 할까?",
-            character: "char5.png"
+            title: "시간이 없는데.. 어떡하지?",
+            description: "어머나, 그런데 일정이 앞당겨졌다... 팀이 모두 지쳐 있는데 어떡하지..? 이번 주 야근만 세 번이에요... 드미는 팀의 분위기를 바꾸고 싶다. 지금 팀을 어떻게 이끌까?",
+            character: "char7.png"
         },
         {
-            title: "최종 결정의 순간",
-            description: "모든 정보를 종합해보니 이제 최종 결정을 내려야 할 때다. 어떤 선택을 하면 좋을까?",
-            character: "char4.png"
+            title: "퇴근인데 왜 대표님이 날?",
+            description: "팀 분위기가 한결 밝아졌다. 이대로 끝까지 가보자! 그런데 퇴근 직전, 대표님이 부르신다. \"듬이 씨, 이번 프로젝트의 목표는?\"",
+            character: "char8.png"
         }
     ];
     
@@ -286,8 +305,8 @@ function updateScenario() {
         // 진행 상황 업데이트
         updateProgress();
     } else {
-        // 모든 시나리오 완료 - 종합 분석
-        showFinalAnalysis();
+        // 모든 시나리오 완료 - 분석 중 화면으로 이동
+        window.location.href = 'analyzing.html';
     }
 }
 
@@ -303,16 +322,16 @@ function updateChoices() {
             "출시만 서두르다 우리 브랜드 이미지가 떨어질 수도 있어. 충분한 테스트 후에 퀄리티 있는 상품으로 출시하는 것이 맞지."
         ],
         [
-            "팀원들의 의견을 모두 들어보고 합의점을 찾아보자.",
-            "빠른 결정이 필요하니 리더십을 발휘해서 방향을 제시하자."
+            "일정 내 가능한 대안부터 우선순위화해서 정리해봅시다.",
+            "한 팀인만큼 서로의 입장에서 한번 더 생각해보고 의견차이를 좁혀봅시다."
         ],
         [
-            "고객의 의견을 더 자세히 들어보고 개선점을 찾아보자.",
-            "현재 상황을 정확히 파악하고 단계적으로 접근해보자."
+            "목표를 80% 달성으로 조정하고 업무를 재배분합시다.",
+            "속도보단 완성도를 봅시다. 제가 일정 정리 도와드릴게요."
         ],
         [
-            "모든 정보를 종합해서 신중하게 결정하자.",
-            "직감과 경험을 바탕으로 빠르게 결정하자."
+            "신규 유입유저가 10%를 넘을 수 있도록 하겠습니다!",
+            "사용자 만족도가 80%를 넘을 수 있도록 하겠습니다!"
         ]
     ];
     
@@ -333,9 +352,9 @@ function updateTime() {
     const times = [
         '09:00 AM',
         '09:55 AM',
-        '10:30 AM',
-        '11:15 AM',
-        '12:00 PM'
+        '11:00 AM',
+        '14:00 PM',
+        '17:00 PM'
     ];
     
     if (currentScenario <= times.length) {

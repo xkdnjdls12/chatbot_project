@@ -1,0 +1,156 @@
+/* 도입부 페이지 스타일 */
+.intro-container {
+    min-height: 100vh;
+    background: linear-gradient(135deg, #87CEEB 0%, #98D8E8 100%);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+    font-family: 'Galmuri9', 'Arial', sans-serif;
+}
+
+.intro-card {
+    background: white;
+    border-radius: 20px;
+    padding: 30px;
+    max-width: 400px;
+    width: 100%;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+    text-align: center;
+}
+
+/* 시간 섹션 */
+.time-section {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 20px;
+    padding: 10px 0;
+}
+
+.time {
+    font-size: 24px;
+    font-weight: bold;
+    color: #4A90E2;
+    font-family: 'Courier New', monospace;
+}
+
+.status {
+    font-size: 14px;
+    color: #666;
+    flex: 1;
+    margin: 0 15px;
+}
+
+.close-btn {
+    background: none;
+    border: none;
+    font-size: 20px;
+    color: #999;
+    cursor: pointer;
+    padding: 5px;
+    border-radius: 50%;
+    transition: all 0.3s ease;
+}
+
+.close-btn:hover {
+    background-color: #f0f0f0;
+    color: #666;
+}
+
+/* 캐릭터 섹션 */
+.character-section {
+    margin: 20px 0;
+}
+
+.intro-character {
+    width: 200px;
+    height: auto;
+    border-radius: 15px;
+}
+
+/* 안내 사항 */
+.info-section {
+    margin: 30px 0;
+}
+
+.info-box {
+    background: #f8f9fa;
+    border: 2px solid #e9ecef;
+    border-radius: 12px;
+    padding: 15px;
+    margin: 10px 0;
+    text-align: left;
+    font-size: 14px;
+    line-height: 1.5;
+}
+
+.info-box p {
+    margin: 0;
+    color: #333;
+}
+
+.info-box strong {
+    color: #4A90E2;
+    font-weight: bold;
+}
+
+/* 출근하기 버튼 */
+.start-work-btn {
+    background: linear-gradient(135deg, #4A90E2 0%, #357ABD 100%);
+    color: white;
+    border: none;
+    border-radius: 15px;
+    padding: 15px 40px;
+    font-size: 18px;
+    font-weight: bold;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    box-shadow: 0 5px 15px rgba(74, 144, 226, 0.3);
+    font-family: 'Galmuri9', 'Arial', sans-serif;
+    width: 100%;
+    margin-top: 20px;
+}
+
+.start-work-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 25px rgba(74, 144, 226, 0.4);
+}
+
+.start-work-btn:active {
+    transform: translateY(0);
+    box-shadow: 0 3px 10px rgba(74, 144, 226, 0.3);
+}
+
+/* 반응형 디자인 */
+@media (max-width: 480px) {
+    .intro-container {
+        padding: 10px;
+    }
+    
+    .intro-card {
+        padding: 20px;
+    }
+    
+    .time {
+        font-size: 20px;
+    }
+    
+    .status {
+        font-size: 12px;
+    }
+    
+    .intro-character {
+        width: 150px;
+    }
+    
+    .info-box {
+        padding: 12px;
+        font-size: 13px;
+    }
+    
+    .start-work-btn {
+        padding: 12px 30px;
+        font-size: 16px;
+    }
+}

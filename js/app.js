@@ -21,8 +21,8 @@ document.addEventListener('DOMContentLoaded', function() {
 
 // 챗봇 테스트 시작 함수
 function startChatbotTest() {
-    // 챗봇 페이지로 이동
-    window.location.href = 'chatbot.html';
+    // 도입부 페이지로 이동
+    window.location.href = 'intro.html';
 }
 
 // 챗봇 인터페이스 표시 함수 (향후 구현)
