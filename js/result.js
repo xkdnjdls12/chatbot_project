@@ -90,32 +90,17 @@ function loadAnalysisResult() {
     try {
         console.log('🔍 분석 결과 로드 시작...');
         
-        // 피드백 타입 확인
-        const feedbackType = localStorage.getItem('feedbackType');
-        console.log('📋 피드백 타입:', feedbackType);
-        
         // 로컬 스토리지에서 분석 결과 가져오기
         const analysisResult = localStorage.getItem('analysisResult');
         console.log('📊 저장된 분석 결과:', analysisResult);
         
         if (!analysisResult) {
-            console.log('⚠️ 분석 결과가 없습니다. 기본 결과를 표시합니다.');
-            showDefaultResult();
+            console.log('⚠️ 분석 결과가 없습니다.');
             return;
         }
         
-        let parsedResult;
-        
-        if (feedbackType === 'withReasons') {
-            // 이유 작성된 경우 - AI 분석 결과 파싱
-            console.log('🤖 AI 분석 결과 파싱 중...');
-            parsedResult = parseAIResult(analysisResult);
-        } else {
-            // 이유 미작성된 경우 - 고정값 피드백 파싱
-            console.log('📋 고정값 피드백 파싱 중...');
-            parsedResult = JSON.parse(analysisResult);
-        }
-        
+        // JSON 파싱
+        const parsedResult = JSON.parse(analysisResult);
         console.log('✅ 파싱된 결과:', parsedResult);
         
         // 결과 데이터를 화면에 적용
@@ -123,71 +108,10 @@ function loadAnalysisResult() {
         
     } catch (error) {
         console.error('💥 결과 로드 중 오류:', error);
-        showDefaultResult();
     }
 }
 
-// AI 분석 결과 파싱
-function parseAIResult(aiResult) {
-    console.log('🔧 AI 분석 결과 파싱 시작:', aiResult);
-    
-    const lines = aiResult.split('\n');
-    const result = {
-        pmType: '알파메일 PM', // 기본값
-        summary: '불필요한 감정소모는 NO!', // 기본값
-        description: '모든 일엔 기준과 프로세스가 있어야 한다고 믿는 PM계의 냉철한 현실주의자.', // 기본값
-        aiAnalysis: '',
-        strengths: '',
-        improvements: ''
-    };
-    
-    lines.forEach(line => {
-        const trimmedLine = line.trim();
-        console.log('📝 파싱 중인 라인:', trimmedLine);
-        
-        if (trimmedLine.startsWith('AI맞춤분석:')) {
-            result.aiAnalysis = trimmedLine.replace('AI맞춤분석:', '').trim();
-            console.log('✅ AI 맞춤 분석 추출:', result.aiAnalysis);
-        } else if (trimmedLine.startsWith('나만의강점:')) {
-            result.strengths = trimmedLine.replace('나만의강점:', '').trim();
-            console.log('✅ 나만의 강점 추출:', result.strengths);
-        } else if (trimmedLine.startsWith('내가보완할부분:')) {
-            result.improvements = trimmedLine.replace('내가보완할부분:', '').trim();
-            console.log('✅ 내가 보완할 부분 추출:', result.improvements);
-        }
-    });
-    
-    // 빈 값이면 기본값 사용
-    if (!result.aiAnalysis) {
-        result.aiAnalysis = '높은 추진력과 결단력을 기반으로 목표를 명확히 설정하고 신속하게 실행하는 성과 중심형 리더십을 보유.';
-        console.log('⚠️ AI 맞춤 분석 기본값 사용');
-    }
-    if (!result.strengths) {
-        result.strengths = '높은 추진력과 결단력을 기반으로 목표를 명확히 설정하고 신속하게 실행하는 성과 중심형 리더십을 보유.';
-        console.log('⚠️ 나만의 강점 기본값 사용');
-    }
-    if (!result.improvements) {
-        result.improvements = '성과 중심 사고로 인해 공감과 피드백 수용이 다소 부족할 수 있음. 팀원 의견 반영과 소통 강화를 통해 리더십 균형 향상이 필요함.';
-        console.log('⚠️ 내가 보완할 부분 기본값 사용');
-    }
-    
-    console.log('✅ 최종 파싱 결과:', result);
-    return result;
-}
 
-// 기본 결과 표시
-function showDefaultResult() {
-    const defaultResult = {
-        pmType: '알파메일 PM',
-        summary: '불필요한 감정소모는 NO!',
-        description: '모든 일엔 기준과 프로세스가 있어야 한다고 믿는 PM계의 냉철한 현실주의자.',
-        aiAnalysis: '높은 추진력과 결단력을 기반으로 목표를 명확히 설정하고 신속하게 실행하는 성과 중심형 리더십을 보유.',
-        strengths: '높은 추진력과 결단력을 기반으로 목표를 명확히 설정하고 신속하게 실행하는 성과 중심형 리더십을 보유.',
-        improvements: '성과 중심 사고로 인해 공감과 피드백 수용이 다소 부족할 수 있음. 팀원 의견 반영과 소통 강화를 통해 리더십 균형 향상이 필요함.'
-    };
-    
-    updateResultDisplay(defaultResult);
-}
 
 // 결과 표시 업데이트
 function updateResultDisplay(result) {
