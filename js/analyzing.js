@@ -87,19 +87,24 @@ async function performAnalysis() {
             localStorage.setItem('feedbackType', 'withReasons'); // 이유 작성됨 표시
             console.log('💾 결합된 분석 결과 저장 완료');
         } else {
-            // 이유가 모두 미작성된 경우 - 32가지 유형 매핑만 사용
-            console.log('📋 32가지 유형 매핑만 사용');
-            const fixedFeedback = {
-                ...pmTypeResult,
-                strengths: '높은 추진력과 결단력을 기반으로 목표를 명확히 설정하고 신속하게 실행하는 성과 중심형 리더십을 보유.',
-                improvements: '성과 중심 사고로 인해 공감과 피드백 수용이 다소 부족할 수 있음. 팀원 의견 반영과 소통 강화를 통해 리더십 균형 향상이 필요함.',
+            // 이유가 모두 미작성된 경우 - 새로운 "이유 0개 전용" 프롬프트 사용
+            console.log('📋 이유 0개 전용 프롬프트로 분석 시작...');
+            const analysisResult = await callNoReasonsAnalysis(userData.choices);
+            console.log('✅ 고정값 매핑 결과:', analysisResult);
+            
+            // 32가지 유형 정보와 고정값 매핑 결과를 결합
+            const combinedResult = {
+                ...pmTypeResult, // 32가지 유형 정보
+                aiAnalysis: analysisResult.aiAnalysis,
+                strengths: analysisResult.strengths,
+                improvements: analysisResult.improvements,
                 strengthsTitle: '강점',
                 improvementsTitle: '보완할 부분',
                 feedbackType: 'withoutReasons'
             };
-            localStorage.setItem('analysisResult', JSON.stringify(fixedFeedback));
+            localStorage.setItem('analysisResult', JSON.stringify(combinedResult));
             localStorage.setItem('feedbackType', 'withoutReasons'); // 이유 미작성 표시
-            console.log('💾 32가지 유형 매핑 결과 저장 완료');
+            console.log('💾 고정값 매핑 결과 저장 완료');
         }
         
         // 결과 페이지로 전환
@@ -249,6 +254,140 @@ user_reasons: ${JSON.stringify(userReasons)}
             aiAnalysis: '사용자의 선택 패턴을 분석한 결과, 체계적이고 논리적인 접근 방식을 보여주는 PM으로 평가됩니다.',
             strengths: '높은 추진력과 결단력을 기반으로 목표를 명확히 설정하고 신속하게 실행하는 성과 중심형 리더십을 보유.',
             improvements: '성과 중심 사고로 인해 공감과 피드백 수용이 다소 부족할 수 있음. 팀원 의견 반영과 소통 강화를 통해 리더십 균형 향상이 필요함.'
+        };
+    }
+}
+
+// 이유 0개(미작성) 전용 OpenAI API 호출
+async function callNoReasonsAnalysis(choices) {
+    console.log('🔑 API 키 로드 중...');
+    
+    // .env 파일에서 API 키 로드
+    const envData = await loadEnvFile();
+    const OPENAI_API_KEY = envData.OPENAI_API;
+    const OPENAI_API_URL = 'https://api.openai.com/v1/chat/completions';
+    
+    console.log('🔑 API 키 상태:', OPENAI_API_KEY ? '✅ 로드됨' : '❌ 없음');
+    
+    if (!OPENAI_API_KEY) {
+        throw new Error('OpenAI API 키를 찾을 수 없습니다.');
+    }
+    
+    // 사용자 유형 코드 생성
+    const typeCode = choices.map(choice => choice.choice).join('');
+    console.log('📊 사용자 유형 코드:', typeCode);
+    
+    // 32가지 유형 카탈로그에서 해당 유형 정보 가져오기
+    const pmTypeResult = getFixedFeedback(choices);
+    
+    const messages = [
+        {
+            role: "system",
+            content: `역할: 너는 텍스트 생성기가 아니다. 주어진 유형별 고정값을 그대로 JSON에 매핑해 반환하는 매핑기다.
+중요: 어떠한 문구도 새로 만들어내지 말고, 입력으로 주어진 고정값을 '문자 단위까지 동일하게' 그대로 사용하라.
+
+입력(Inputs)
+type_code: 사용자의 성향 코드(예: "AABAA").
+type_catalog: 32가지 유형별 결과값 전체 객체. 각 항목은 아래 필드 키를 가진다:
+- simple_intro (간단 소개)
+- detailed_intro (자세한 소개)
+- strength (강점)
+- improvement (보완할 부분)
+user_reasons: 사용자가 입력한 이유 배열. 본 프롬프트는 user_reasons.length === 0인 경우에만 실행된다.
+
+규칙(Rules)
+user_reasons.length === 0이 맞는지 먼저 확인한다. 아니면 즉시 에러 JSON을 반환한다(아래 참조).
+문구 생성 금지. 모든 출력은 type_catalog[type_code]의 원문을 그대로 사용한다.
+
+매핑 규칙
+"aiAnalysis" ← type_catalog[type_code].detailed_intro (자세한 소개 원문 그대로)
+"strengths" ← type_catalog[type_code].strength (강점 원문 그대로)
+"improvements" ← type_catalog[type_code].improvement (보완할 부분 원문 그대로)
+
+길이 제약 적용 금지. 80~100자 규칙, 줄바꿈 규칙, 중복 제거 등 일체 적용하지 않는다.
+출력 형식은 JSON만. JSON 외 텍스트 금지. 키 이름은 정확히 아래 스키마를 따를 것.
+입력된 type_code가 type_catalog에 없으면 에러 JSON을 반환.
+
+출력 스키마(Output Schema)
+다음 둘 중 하나의 JSON만 출력 가능:
+
+정상 출력(JSON)
+{
+  "aiAnalysis": "<type_catalog[type_code].detailed_intro 그대로>",
+  "strengths": "<type_catalog[type_code].strength 그대로>",
+  "improvements": "<type_catalog[type_code].improvement 그대로>"
+}
+
+에러 출력(JSON)
+{
+  "error": "INVALID_INPUT",
+  "message": "This prompt must be used only when user_reasons is empty and type_code exists in catalog."
+}`
+        },
+        {
+            role: "user",
+            content: `type_code: "${typeCode}"
+type_catalog: ${JSON.stringify(pmTypeResult)}
+user_reasons: []
+
+위 정보를 바탕으로 고정값을 그대로 매핑해주세요.`
+        }
+    ];
+    
+    const requestBody = {
+        model: "gpt-3.5-turbo",
+        messages: messages,
+        max_tokens: 1000,
+        temperature: 0.1
+    };
+    
+    console.log('🚀 이유 0개 전용 프롬프트로 OpenAI API 요청 시작...');
+    console.log('📡 요청 URL:', OPENAI_API_URL);
+    
+    const response = await fetch(OPENAI_API_URL, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${OPENAI_API_KEY}`
+        },
+        body: JSON.stringify(requestBody)
+    });
+    
+    console.log('📡 API 응답 상태:', response.status, response.statusText);
+    
+    if (!response.ok) {
+        const errorText = await response.text();
+        console.error('❌ API 호출 실패:', errorText);
+        throw new Error(`API 호출 실패: ${response.status} - ${errorText}`);
+    }
+    
+    const data = await response.json();
+    console.log('✅ API 응답 데이터:', data);
+    
+    const responseText = data.choices[0].message.content;
+    console.log('📝 LLM 응답 텍스트:', responseText);
+    
+    // JSON 파싱
+    try {
+        const parsedResult = JSON.parse(responseText);
+        console.log('✅ JSON 파싱 성공:', parsedResult);
+        
+        // 에러 체크
+        if (parsedResult.error) {
+            console.error('❌ LLM 에러 응답:', parsedResult);
+            throw new Error(parsedResult.message);
+        }
+        
+        return parsedResult;
+    } catch (parseError) {
+        console.error('❌ JSON 파싱 실패:', parseError);
+        console.log('📝 원본 응답:', responseText);
+        
+        // 파싱 실패 시 기본값 반환
+        return {
+            aiAnalysis: pmTypeResult.detailedIntro || pmTypeResult.typeDescription || '분석 결과를 불러올 수 없습니다.',
+            strengths: pmTypeResult.strengths || '강점 정보를 불러올 수 없습니다.',
+            improvements: pmTypeResult.improvements || '보완점 정보를 불러올 수 없습니다.'
         };
     }
 }
