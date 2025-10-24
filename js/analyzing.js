@@ -60,23 +60,38 @@ async function performAnalysis() {
         const hasReasons = userData.reasons.some(reason => reason.reason && reason.reason.trim() !== '');
         console.log('📝 이유 작성 여부:', hasReasons ? '작성됨' : '미작성');
         
+        // 32가지 유형 매핑 (이유 작성 여부와 관계없이 항상 수행)
+        console.log('🔍 32가지 유형 매핑 시작...');
+        const pmTypeResult = getFixedFeedback(userData.choices);
+        console.log('✅ 32가지 유형 매핑 완료:', pmTypeResult);
+        
         if (hasReasons) {
-            // 이유가 1개 이상 작성된 경우 - LLM 분석
+            // 이유가 1개 이상 작성된 경우 - LLM 분석 + 32가지 유형 매핑
             console.log('🤖 OpenAI API 호출 시작...');
             const analysisResult = await callOpenAIAnalysis(userData.reasons);
             console.log('✅ AI 분석 결과:', analysisResult);
             
+            // 32가지 유형 정보와 AI 분석 결과를 결합
+            const combinedResult = {
+                ...pmTypeResult, // 32가지 유형 정보
+                aiAnalysis: analysisResult, // AI 분석 결과
+                feedbackType: 'withReasons'
+            };
+            
             // 결과를 로컬 스토리지에 저장
-            localStorage.setItem('analysisResult', analysisResult);
+            localStorage.setItem('analysisResult', JSON.stringify(combinedResult));
             localStorage.setItem('feedbackType', 'withReasons'); // 이유 작성됨 표시
-            console.log('💾 분석 결과 저장 완료');
+            console.log('💾 결합된 분석 결과 저장 완료');
         } else {
-            // 이유가 모두 미작성된 경우 - 고정값 피드백
-            console.log('📋 고정값 피드백 사용');
-            const fixedFeedback = getFixedFeedback(userData.choices);
+            // 이유가 모두 미작성된 경우 - 32가지 유형 매핑만 사용
+            console.log('📋 32가지 유형 매핑만 사용');
+            const fixedFeedback = {
+                ...pmTypeResult,
+                feedbackType: 'withoutReasons'
+            };
             localStorage.setItem('analysisResult', JSON.stringify(fixedFeedback));
             localStorage.setItem('feedbackType', 'withoutReasons'); // 이유 미작성 표시
-            console.log('💾 고정 피드백 저장 완료');
+            console.log('💾 32가지 유형 매핑 결과 저장 완료');
         }
         
         // 결과 페이지로 전환
@@ -208,27 +223,28 @@ function analyzeChoicePattern(choices) {
         console.log(`시나리오 ${index + 1} 선택지:`, text);
         
         // 각 시나리오별 A/B 패턴 매핑
-        // 시나리오 1: 문제해결 방식
-        if (text.includes('직접 써보면서') || text.includes('감을 잡아보자')) return 'A'; // 직관형
-        if (text.includes('데이터를 먼저') || text.includes('분석해보자')) return 'B'; // 논리형
+        // 시나리오 1: 문제해결 방식 - A: 직관형, B: 논리형
+        if (text.includes('직접 써보면서') || text.includes('불편함이 느껴지는지') || text.includes('감을 잡아보자')) return 'A'; // 직관형
+        if (text.includes('데이터를 먼저') || text.includes('이탈이 발생했는지') || text.includes('분석해보자')) return 'B'; // 논리형
         
-        // 시나리오 2: 실행스타일
-        if (text.includes('빠르게 점유') || text.includes('빠르게 출시')) return 'A'; // 빠른 실행
-        if (text.includes('브랜드 이미지') || text.includes('충분한 테스트')) return 'B'; // 리스크 관리
+        // 시나리오 2: 실행스타일 - A: 빠른 실행 우선, B: 리스크 관리 우선
+        if (text.includes('빠르게 점유') || text.includes('경쟁사보다 빠르게') || text.includes('빠르게 출시')) return 'A'; // 빠른 실행
+        if (text.includes('브랜드 이미지') || text.includes('충분한 테스트') || text.includes('퀄리티 있는 상품')) return 'B'; // 리스크 관리
         
-        // 시나리오 3: 커뮤니케이션
-        if (text.includes('우선순위화') || text.includes('정리해봅시다')) return 'A'; // 직설형
-        if (text.includes('서로의 입장') || text.includes('의견차이를 좁혀')) return 'B'; // 조율형
+        // 시나리오 3: 커뮤니케이션 - A: 직설형, B: 조율형
+        if (text.includes('우선순위화') || text.includes('정리해봅시다') || text.includes('일정 내 가능한 대안')) return 'A'; // 직설형
+        if (text.includes('서로의 입장') || text.includes('의견차이를 좁혀') || text.includes('한 팀인만큼')) return 'B'; // 조율형
         
-        // 시나리오 4: 리더십
-        if (text.includes('80% 달성') || text.includes('업무를 재배분')) return 'A'; // 드라이브형
-        if (text.includes('완성도를 봅시다') || text.includes('일정 정리 도와드릴게요')) return 'B'; // 서포트형
+        // 시나리오 4: 리더십 - A: 드라이브형, B: 서포트형
+        if (text.includes('80% 달성') || text.includes('업무를 재배분') || text.includes('목표를 80% 달성')) return 'A'; // 드라이브형
+        if (text.includes('완성도를 봅시다') || text.includes('일정 정리 도와드릴게요') || text.includes('속도보단 완성도')) return 'B'; // 서포트형
         
-        // 시나리오 5: 전략적사고
-        if (text.includes('신규 유입유저') || text.includes('10%를 넘을')) return 'A'; // 성과중심형
-        if (text.includes('사용자 만족도') || text.includes('80%를 넘을')) return 'B'; // 가치중심형
+        // 시나리오 5: 전략적사고 - A: 성과중심형, B: 가치중심형
+        if (text.includes('신규 유입유저') || text.includes('10%를 넘을') || text.includes('신규 유입유저가 10%')) return 'A'; // 성과중심형
+        if (text.includes('사용자 만족도') || text.includes('80%를 넘을') || text.includes('사용자 만족도가 80%')) return 'B'; // 가치중심형
         
         console.warn(`⚠️ 매칭되지 않은 선택지: ${text}`);
+        console.warn(`⚠️ 시나리오 ${index + 1}에서 매칭 실패`);
         return 'A'; // 기본값
     }).join('');
     
@@ -238,6 +254,7 @@ function analyzeChoicePattern(choices) {
     // 패턴에 따른 PM 유형 매핑
     const pmType = getPMTypeByPattern(pattern);
     console.log('✅ 매칭된 PM 유형:', pmType);
+    console.log('✅ PM 유형 이름:', pmType.pmType);
     
     return pmType;
 }

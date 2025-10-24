@@ -301,72 +301,157 @@ async function submitUserReason() {
         return;
     }
     
-    // 1. 공백 검증
-    if (!reason || reason.trim() === '') {
-        alert('이유를 입력해주세요.');
-        return;
+    try {
+        // 선택한 옵션과 문항 ID 가져오기
+        const selectedChoice = userChoices[userChoices.length - 1];
+        const selectedOption = selectedChoice.choice; // A 또는 B
+        const questionId = `Q${currentScenario}`;
+        
+        console.log('🔍 이유 분석 시작:', { reason, selectedOption, questionId });
+        
+        // AI 분석 호출
+        const analysisResult = await analyzeUserReason(reason, selectedOption, questionId);
+        console.log('🤖 AI 분석 결과:', analysisResult);
+        
+        // JSON 파싱
+        let parsedResult;
+        try {
+            parsedResult = JSON.parse(analysisResult);
+        } catch (parseError) {
+            console.error('JSON 파싱 오류:', parseError);
+            alert('분석 중 오류가 발생했습니다. 다시 시도해주세요.');
+            return;
+        }
+        
+        // 분석 결과 검증
+        if (parsedResult.decision === 'reject') {
+            showValidationError(parsedResult.message);
+            return;
+        }
+        
+        // 통과된 경우 사용자 이유 저장
+        userReasons.push({
+            scenario: currentScenario,
+            choice: selectedChoice.text,
+            reason: reason,
+            analysis: parsedResult.outputs,
+            timestamp: new Date().toISOString()
+        });
+        
+        console.log('✅ 사용자 이유 저장 완료:', userReasons[userReasons.length - 1]);
+        
+        // 로컬 스토리지에 사용자 데이터 저장
+        const userData = {
+            choices: userChoices,
+            reasons: userReasons,
+            timestamp: new Date().toISOString()
+        };
+        localStorage.setItem('userTestData', JSON.stringify(userData));
+        console.log('💾 사용자 데이터 저장 완료:', userData);
+        
+        // 입력 프롬프트 숨기기
+        document.getElementById('inputPrompt').style.display = 'none';
+        
+        // 다음 시나리오로 진행
+        proceedToNext();
+        
+    } catch (error) {
+        console.error('💥 이유 분석 중 오류:', error);
+        alert('분석 중 오류가 발생했습니다. 다시 시도해주세요.');
     }
-    
-    // 2. 욕설 및 비속어 검증
-    if (containsInappropriateLanguage(reason)) {
-        showValidationError('부적절한 표현이 섞여있습니다. 다시 작성해주세요.');
-        return;
-    }
-    
-    // 3. 글자 수 제한 확인 (5글자 이상 50글자 이하)
-    if (reason.length < 5) {
-        showValidationError('답변의 길이가 부적절합니다. 답변은 공백 제외 5 ~ 50글자 사이로 작성해주세요.');
-        return;
-    }
-    
-    if (reason.length > 50) {
-        showValidationError('답변의 길이가 부적절합니다. 답변은 공백 제외 5 ~ 50글자 사이로 작성해주세요.');
-        return;
-    }
-    
-    // 4. 유의미도 검증
-    const meaningfulnessScore = calculateMeaningfulnessScore(reason, currentScenario);
-    if (meaningfulnessScore < 7) {
-        showValidationError('답변을 분석하지 못하였습니다. 다시 작성해주세요.');
-        return;
-    }
-    
-    // 사용자 이유 저장
-    userReasons.push({
-        scenario: currentScenario,
-        choice: userChoices[userChoices.length - 1].text,
-        reason: reason,
-        timestamp: new Date().toISOString()
-    });
-    
-    console.log('사용자 입력 이유:', reason);
-    
-    // 로컬 스토리지에 사용자 데이터 저장
-    const userData = {
-        choices: userChoices,
-        reasons: userReasons,
-        timestamp: new Date().toISOString()
-    };
-    localStorage.setItem('userTestData', JSON.stringify(userData));
-    console.log('💾 사용자 데이터 저장 완료:', userData);
-    
-    // 입력 프롬프트 숨기기
-    document.getElementById('inputPrompt').style.display = 'none';
-    
-    // 다음 시나리오로 진행
-    proceedToNext();
 }
 
 // 사용자 이유 분석 함수
-async function analyzeUserReason(reason) {
+async function analyzeUserReason(reason, selectedOption, questionId) {
+    console.log('🔍 사용자 이유 분석 시작:', { reason, selectedOption, questionId });
+    
+    // 의미 그룹 정의
+    const meaningGroups = {
+        "Q1": {
+            "A": ["직접 경험/체험", "사용자 입장", "감각적 관찰", "현장 확인"],
+            "B": ["데이터/지표 기반", "정량 분석", "이탈 단계 파악", "원인 추적"]
+        },
+        "Q2": {
+            "A": ["속도/실행/선점", "기회 창출", "불완전해도 빠른 출시"],
+            "B": ["품질/완성도", "브랜드 이미지", "충분한 테스트/검증"]
+        },
+        "Q3": {
+            "A": ["일정/현실적 대안", "우선순위", "실행 가능한 계획"],
+            "B": ["공감/협업/조율", "관점 전환", "의견 차 좁히기"]
+        },
+        "Q4": {
+            "A": ["목표 조정/재배분", "효율/집중", "현실적 리더십"],
+            "B": ["완성도/지원", "팀 케어", "속도보다 품질"]
+        },
+        "Q5": {
+            "A": ["성과/성장 지표", "신규 유입", "수치 목표"],
+            "B": ["만족/경험", "사용자 중심", "품질·평가"]
+        }
+    };
+    
     const messages = [
         {
             role: "system",
-            content: "당신은 PM 전문가입니다. 사용자가 제시한 문제 해결 이유를 분석하여 PM 유형을 파악하고, 개선점을 제안해주세요. 한국어로 응답하세요."
+            content: `당신은 PM 전문가입니다. 사용자의 답변을 분석하여 예외처리 여부와 유의미도를 판정하고, 통과 시 PM 성향 분석을 제공하세요.
+
+# 처리 순서
+1) TRIM: reason 앞뒤 공백 제거, length_no_space = reason에서 모든 공백 제거한 길이
+2) EMPTY CHECK: length_no_space == 0 → reject("EMPTY", "답변이 입력되지 않았습니다. 다시 작성해주세요.")
+3) PROFANITY CHECK: 비속어/모욕 표현 포함 시 → reject("PROFANITY", "부적절한 표현이 섞여있습니다. 다시 작성해주세요.")
+4) LENGTH CHECK: length_no_space < 5 or length_no_space > 50 → reject("LENGTH", "답변의 길이가 부적절합니다. 답변은 공백 제외 5~50글자 사이로 작성해주세요.")
+5) SCORE: 의미일치도(0~10, w=0.4) + 구체성(0~10, w=0.3) + 표현품질(0~10, w=0.3) → weighted_total
+6) DECIDE: weighted_total >= 7 → pass, else → reject("LOW_SIGNIFICANCE", "답변을 분석하지 못하였습니다. 다시 작성해주세요.")
+
+# 점수 산식(느슨한 기준)
+- weighted_total = semantic_relevance*0.4 + specificity*0.3 + expression_quality*0.3
+- 초깃값: semantic_relevance = 6, specificity = 6, expression_quality = 7
+
+# 의미일치도 판정
+- 선택지의 핵심 의미 그룹과 reason의 맥락/의도가 유사하면 ≥7점 부여
+- 키워드 일치가 없어도 "비슷한 뜻/상황/의도"면 가산
+- 가산 규칙: +2(의미 그룹 직접 일치), +1~2(유사 표현/암시), +1(선택 방향 부합)
+
+# 구체성 판정
+- 행위/절차 언급, 대상/맥락, 근거/도구/자료, 예시/근거 신호 중 하나라도 포함되면 ≥7점
+- 가산 규칙: +2(근거적 표현), +1~2(구체 행위/절차), +1(상황/맥락)
+
+# 표현품질 판정
+- 기본 7점(문법·띄어쓰기 오류·구어체 감점하지 않음)
+- 가산: +1~2(논리적 연결어/결론), +1(방향 명확)
+- 감점: -2~-5(의미 불명확/무관/난수/스팸)
+
+# PASS 시 생성 규칙
+- summary: 이유 텍스트에서 드러난 성향을 2~3문장 느낌으로 40~60자
+- strengths: 긍정 신호를 1~3개, 각 40~60자
+- areas_to_improve: 균형/보완 포인트 1~3개, 각 40~60자
+- 어투: 제안형·중립형(비난 금지)
+
+다음 형식으로 응답하세요:
+{
+  "decision": "pass | reject",
+  "reject_reason": "null | EMPTY | PROFANITY | LENGTH | LOW_SIGNIFICANCE",
+  "scores": {
+    "semantic_relevance": "0~10",
+    "specificity": "0~10", 
+    "expression_quality": "0~10",
+    "weighted_total": "0~10"
+  },
+  "message": "사용자에게 보여줄 1줄 피드백",
+  "outputs": {
+    "summary": "40~60자",
+    "strengths": ["각 40~60자, 최대 3개"],
+    "areas_to_improve": ["각 40~60자, 최대 3개"]
+  }
+}`
         },
         {
             role: "user",
-            content: `사용자가 입력한 문제 해결 이유: "${reason}"\n\n이 이유를 바탕으로 PM 유형을 분석하고, 장단점과 개선 방향을 제시해주세요.`
+            content: `사용자 답변: "${reason}"
+선택한 옵션: ${selectedOption}
+문항 ID: ${questionId}
+의미 그룹: ${JSON.stringify(meaningGroups[questionId] || {})}
+
+위 답변을 분석하여 예외처리 여부와 유의미도를 판정하고, 통과 시 PM 성향 분석을 제공하세요.`
         }
     ];
     
