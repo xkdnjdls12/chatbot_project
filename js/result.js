@@ -81,8 +81,8 @@ function saveAndShare() {
 
 // 홈페이지 구경가기 버튼
 function goHomepage() {
-    // 메인 페이지로 이동
-    window.location.href = 'index.html';
+    // 천재교육 PM 부트캠프 페이지로 이동
+    window.open('https://www.genia.academy/pm', '_blank');
 }
 
 // 결과 데이터 로드 (실제 AI 분석 결과)

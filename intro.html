@@ -12,29 +12,46 @@
         <div class="intro-card">
             <!-- 시간 표시 -->
             <div class="time-section">
-                <span class="time">07:00 AM</span>
-                <span class="status">기상 완료! 오늘도 화이팅</span>
+                <div class="time-info">
+                    <span class="time">07:00 AM</span>
+                    <span class="status">기상 완료! 오늘도 화이팅 ><</span>
+                </div>
                 <button class="close-btn" onclick="location.href='index.html'">×</button>
             </div>
             
             <!-- 캐릭터 이미지 -->
             <div class="character-section">
-                <img src="images/avatars/char4.png" alt="PM 듬이" class="intro-character">
+                <div class="character-container">
+                    <img src="images/avatars/char9.png" alt="PM 듬이" class="character-image">
+                    <img src="images/backgrounds/background.png" alt="도시 배경" class="background-image">
+                </div>
             </div>
             
             <!-- 안내 사항 -->
             <div class="info-section">
                 <div class="info-box">
-                    <p>답변을 선택하면 당신의 <strong>PM 유형</strong>이 결정돼요!</p>
+                    <div class="info-item">
+                        <span class="info-number">1</span>
+                        <p>답변을 선택하면 당신의 <strong>PM 유형</strong>이 결정돼요!</p>
+                    </div>
                 </div>
                 <div class="info-box">
-                    <p>이유를 적어주시면 <strong>AI</strong>가 당신에게 꼭 맞는 <strong>분석 결과</strong>를 알려드려요.</p>
+                    <div class="info-item">
+                        <span class="info-number">2</span>
+                        <p>이유를 적어주시면 <strong>AI</strong>가 당신에게 꼭 맞는 <strong>분석 결과</strong>를 알려드려요.</p>
+                    </div>
                 </div>
                 <div class="info-box">
-                    <p>부담된다면 <strong>건너뛰기</strong>를 눌러주세요.</p>
+                    <div class="info-item">
+                        <span class="info-number">3</span>
+                        <p>부담된다면 <strong>건너뛰기</strong>를 눌러주세요.</p>
+                    </div>
                 </div>
                 <div class="info-box">
-                    <p>단, 건너뛰면 개인 분석은 제공되지 않습니다.</p>
+                    <div class="info-item">
+                        <span class="info-number">4</span>
+                        <p>단, 건너뛰면 개인 분석은 제공되지 않습니다.</p>
+                    </div>
                 </div>
             </div>
             
@@ -46,3 +63,5 @@
     <script src="js/intro.js"></script>
 </body>
 </html>
+
+

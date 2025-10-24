@@ -52,3 +52,5 @@ document.addEventListener('DOMContentLoaded', function() {
         startBtn.style.transform = 'translateY(0)';
     }, 1200);
 });
+
+
