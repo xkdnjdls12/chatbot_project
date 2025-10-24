@@ -6,6 +6,34 @@
     <title>PM 듬이의 하루 - 결과</title>
     <link rel="stylesheet" href="css/style.css">
     <link rel="stylesheet" href="css/result.css">
+    <style>
+        /* 토스트 메시지 애니메이션 */
+        @keyframes slideIn {
+            from {
+                transform: translateX(100%);
+                opacity: 0;
+            }
+            to {
+                transform: translateX(0);
+                opacity: 1;
+            }
+        }
+        
+        @keyframes slideOut {
+            from {
+                transform: translateX(0);
+                opacity: 1;
+            }
+            to {
+                transform: translateX(100%);
+                opacity: 0;
+            }
+        }
+        
+        .success-toast, .error-toast {
+            animation: slideIn 0.3s ease;
+        }
+    </style>
 </head>
 <body>
     <div class="result-container">

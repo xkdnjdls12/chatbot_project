@@ -1,5 +1,156 @@
 // 결과 화면 JavaScript
 
+// 화면 캡처 기능
+async function captureAndSaveResult() {
+    try {
+        console.log('📸 화면 캡처 시작...');
+        
+        // html2canvas 라이브러리 로드
+        if (typeof html2canvas === 'undefined') {
+            await loadHtml2Canvas();
+        }
+        
+        // 캡처할 영역 선택 (전체 결과 화면)
+        const captureArea = document.querySelector('.result-container') || document.body;
+        
+        // html2canvas 옵션 설정
+        const options = {
+            backgroundColor: '#ffffff',
+            scale: 2, // 고해상도
+            useCORS: true,
+            allowTaint: true,
+            scrollX: 0,
+            scrollY: 0,
+            width: captureArea.scrollWidth,
+            height: captureArea.scrollHeight
+        };
+        
+        console.log('📊 캡처 옵션:', options);
+        
+        // 화면 캡처 실행
+        const canvas = await html2canvas(captureArea, options);
+        console.log('✅ 캡처 완료, 캔버스 크기:', canvas.width, 'x', canvas.height);
+        
+        // PNG로 변환
+        const dataURL = canvas.toDataURL('image/png', 1.0);
+        
+        // 파일명 생성 (PM 유형 + 타임스탬프)
+        const pmType = document.querySelector('.pm-type')?.textContent || 'PM유형';
+        const timestamp = new Date().toISOString().slice(0, 19).replace(/[:-]/g, '');
+        const filename = `${pmType}_${timestamp}.png`;
+        
+        console.log('💾 파일명:', filename);
+        
+        // 파일 다운로드
+        downloadImage(dataURL, filename);
+        
+        // 성공 메시지
+        showSuccessMessage('결과가 성공적으로 저장되었습니다!');
+        
+    } catch (error) {
+        console.error('❌ 화면 캡처 실패:', error);
+        showErrorMessage('화면 저장 중 오류가 발생했습니다. 다시 시도해주세요.');
+    }
+}
+
+// html2canvas 라이브러리 동적 로드
+function loadHtml2Canvas() {
+    return new Promise((resolve, reject) => {
+        if (typeof html2canvas !== 'undefined') {
+            resolve();
+            return;
+        }
+        
+        const script = document.createElement('script');
+        script.src = 'https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js';
+        script.onload = () => {
+            console.log('✅ html2canvas 라이브러리 로드 완료');
+            resolve();
+        };
+        script.onerror = () => {
+            console.error('❌ html2canvas 라이브러리 로드 실패');
+            reject(new Error('html2canvas 라이브러리 로드 실패'));
+        };
+        document.head.appendChild(script);
+    });
+}
+
+// 이미지 다운로드 함수
+function downloadImage(dataURL, filename) {
+    const link = document.createElement('a');
+    link.download = filename;
+    link.href = dataURL;
+    
+    // 임시로 DOM에 추가하고 클릭
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    
+    console.log('💾 다운로드 완료:', filename);
+}
+
+// 성공 메시지 표시
+function showSuccessMessage(message) {
+    const toast = document.createElement('div');
+    toast.className = 'success-toast';
+    toast.textContent = message;
+    toast.style.cssText = `
+        position: fixed;
+        top: 20px;
+        right: 20px;
+        background: #4CAF50;
+        color: white;
+        padding: 12px 20px;
+        border-radius: 8px;
+        z-index: 10000;
+        font-size: 14px;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+        animation: slideIn 0.3s ease;
+    `;
+    
+    document.body.appendChild(toast);
+    
+    setTimeout(() => {
+        toast.style.animation = 'slideOut 0.3s ease';
+        setTimeout(() => {
+            if (toast.parentNode) {
+                toast.parentNode.removeChild(toast);
+            }
+        }, 300);
+    }, 3000);
+}
+
+// 에러 메시지 표시
+function showErrorMessage(message) {
+    const toast = document.createElement('div');
+    toast.className = 'error-toast';
+    toast.textContent = message;
+    toast.style.cssText = `
+        position: fixed;
+        top: 20px;
+        right: 20px;
+        background: #f44336;
+        color: white;
+        padding: 12px 20px;
+        border-radius: 8px;
+        z-index: 10000;
+        font-size: 14px;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+        animation: slideIn 0.3s ease;
+    `;
+    
+    document.body.appendChild(toast);
+    
+    setTimeout(() => {
+        toast.style.animation = 'slideOut 0.3s ease';
+        setTimeout(() => {
+            if (toast.parentNode) {
+                toast.parentNode.removeChild(toast);
+            }
+        }, 300);
+    }, 3000);
+}
+
 // 페이지 로드 시 애니메이션 및 결과 로드
 document.addEventListener('DOMContentLoaded', function() {
     // 카드 등장 애니메이션
@@ -54,29 +205,8 @@ document.addEventListener('DOMContentLoaded', function() {
 
 // 저장하고 공유하기 버튼
 function saveAndShare() {
-    // 결과를 로컬 스토리지에 저장
-    const resultData = {
-        pmType: '알파메일 PM',
-        timestamp: new Date().toISOString(),
-        analysis: '높은 추진력과 결단력을 기반으로 목표를 명확히 설정하고 신속하게 실행하는 성과 중심형 리더십을 보유.'
-    };
-    
-    localStorage.setItem('pmTestResult', JSON.stringify(resultData));
-    
-    // 공유 기능 (Web Share API 사용)
-    if (navigator.share) {
-        navigator.share({
-            title: 'PM 듬이의 하루 - 테스트 결과',
-            text: '나의 PM 유형은 "알파메일 PM"이에요!',
-            url: window.location.href
-        });
-    } else {
-        // 클립보드에 복사
-        const shareText = `나의 PM 유형은 "알파메일 PM"이에요! PM 듬이의 하루 테스트 결과를 확인해보세요.`;
-        navigator.clipboard.writeText(shareText).then(() => {
-            alert('결과가 클립보드에 복사되었습니다!');
-        });
-    }
+    // 화면 캡처 및 저장 실행
+    captureAndSaveResult();
 }
 
 // 홈페이지 구경가기 버튼
