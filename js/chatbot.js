@@ -307,11 +307,11 @@ async function submitUserReason() {
         const selectedOption = selectedChoice.choice; // A 또는 B
         const questionId = `Q${currentScenario}`;
         
-        console.log('🔍 이유 분석 시작:', { reason, selectedOption, questionId });
+        console.log('🔍 통합 분석 시작:', { reason, selectedOption, questionId });
         
-        // AI 분석 호출
+        // 통합 분석 호출
         const analysisResult = await analyzeUserReason(reason, selectedOption, questionId);
-        console.log('🤖 AI 분석 결과:', analysisResult);
+        console.log('🤖 통합 분석 결과:', analysisResult);
         
         // JSON 파싱
         let parsedResult;
@@ -323,9 +323,9 @@ async function submitUserReason() {
             return;
         }
         
-        // 분석 결과 검증
-        if (parsedResult.decision === 'reject') {
-            showValidationError(parsedResult.message);
+        // 피드백 결과 검증
+        if (parsedResult.feedback && parsedResult.feedback.decision === 'reject') {
+            showValidationError(parsedResult.feedback.message);
             return;
         }
         
@@ -334,7 +334,8 @@ async function submitUserReason() {
             scenario: currentScenario,
             choice: selectedChoice.text,
             reason: reason,
-            analysis: parsedResult.outputs,
+            feedback: parsedResult.feedback,
+            mapping: parsedResult.mapping,
             timestamp: new Date().toISOString()
         });
         
@@ -356,109 +357,222 @@ async function submitUserReason() {
         proceedToNext();
         
     } catch (error) {
-        console.error('💥 이유 분석 중 오류:', error);
+        console.error('💥 통합 분석 중 오류:', error);
         alert('분석 중 오류가 발생했습니다. 다시 시도해주세요.');
     }
 }
 
-// 사용자 이유 분석 함수
+// 통합 피드백 및 매핑 시스템
 async function analyzeUserReason(reason, selectedOption, questionId) {
-    console.log('🔍 사용자 이유 분석 시작:', { reason, selectedOption, questionId });
+    console.log('🔍 통합 분석 시작:', { reason, selectedOption, questionId });
     
-    // 의미 그룹 정의
-    const meaningGroups = {
-        "Q1": {
-            "A": ["직접 경험/체험", "사용자 입장", "감각적 관찰", "현장 확인"],
-            "B": ["데이터/지표 기반", "정량 분석", "이탈 단계 파악", "원인 추적"]
-        },
-        "Q2": {
-            "A": ["속도/실행/선점", "기회 창출", "불완전해도 빠른 출시"],
-            "B": ["품질/완성도", "브랜드 이미지", "충분한 테스트/검증"]
-        },
-        "Q3": {
-            "A": ["일정/현실적 대안", "우선순위", "실행 가능한 계획"],
-            "B": ["공감/협업/조율", "관점 전환", "의견 차 좁히기"]
-        },
-        "Q4": {
-            "A": ["목표 조정/재배분", "효율/집중", "현실적 리더십"],
-            "B": ["완성도/지원", "팀 케어", "속도보다 품질"]
-        },
-        "Q5": {
-            "A": ["성과/성장 지표", "신규 유입", "수치 목표"],
-            "B": ["만족/경험", "사용자 중심", "품질·평가"]
-        }
-    };
+    // 32가지 유형 매핑을 위한 패턴 생성
+    const userChoices = JSON.parse(localStorage.getItem('userTestData') || '{}').choices || [];
+    const pattern = userChoices.map(choice => choice.choice).join('');
     
     const messages = [
         {
             role: "system",
-            content: `당신은 PM 전문가입니다. 사용자의 답변을 분석하여 예외처리 여부와 유의미도를 판정하고, 통과 시 PM 성향 분석을 제공하세요.
+            content: `당신은 "피드백 생성 및 예외처리 + 32유형 매핑" 시스템입니다.
 
-# 처리 순서
-1) TRIM: reason 앞뒤 공백 제거, length_no_space = reason에서 모든 공백 제거한 길이
-2) EMPTY CHECK: length_no_space == 0 → reject("EMPTY", "답변이 입력되지 않았습니다. 다시 작성해주세요.")
-3) PROFANITY CHECK: 비속어/모욕 표현 포함 시 → reject("PROFANITY", "부적절한 표현이 섞여있습니다. 다시 작성해주세요.")
-4) LENGTH CHECK: length_no_space < 5 or length_no_space > 50 → reject("LENGTH", "답변의 길이가 부적절합니다. 답변은 공백 제외 5~50글자 사이로 작성해주세요.")
-5) SCORE: 의미일치도(0~10, w=0.4) + 구체성(0~10, w=0.3) + 표현품질(0~10, w=0.3) → weighted_total
-6) DECIDE: weighted_total >= 7 → pass, else → reject("LOW_SIGNIFICANCE", "답변을 분석하지 못하였습니다. 다시 작성해주세요.")
+==============================
+[0] 입력/출력 계약 (I/O Contract)
+==============================
+■ 입력(JSON):
+- 다음 중 하나 이상을 포함할 수 있습니다.
+  1) reason_input: 단일 문항(reason) 분석용
+     {
+       "question_id": "Q1"~"Q5",
+       "selected_option": "A" | "B",
+       "reason": "문자열"
+     }
+  2) selections 또는 pattern: 5문항 전체 선택 기반 32유형 매핑용
+     - selections: {"Q1":"A|B","Q2":"A|B","Q3":"A|B","Q4":"A|B","Q5":"A|B"}
+     - 또는 pattern: "AAAAA" ~ "BBBBB" (정확히 5자, 각 자리 A/B)
 
-# 점수 산식(느슨한 기준)
-- weighted_total = semantic_relevance*0.4 + specificity*0.3 + expression_quality*0.3
-- 초깃값: semantic_relevance = 6, specificity = 6, expression_quality = 7
-
-# 의미일치도 판정
-- 선택지의 핵심 의미 그룹과 reason의 맥락/의도가 유사하면 ≥7점 부여
-- 키워드 일치가 없어도 "비슷한 뜻/상황/의도"면 가산
-- 가산 규칙: +2(의미 그룹 직접 일치), +1~2(유사 표현/암시), +1(선택 방향 부합)
-
-# 구체성 판정
-- 행위/절차 언급, 대상/맥락, 근거/도구/자료, 예시/근거 신호 중 하나라도 포함되면 ≥7점
-- 가산 규칙: +2(근거적 표현), +1~2(구체 행위/절차), +1(상황/맥락)
-
-# 표현품질 판정
-- 기본 7점(문법·띄어쓰기 오류·구어체 감점하지 않음)
-- 가산: +1~2(논리적 연결어/결론), +1(방향 명확)
-- 감점: -2~-5(의미 불명확/무관/난수/스팸)
-
-# PASS 시 생성 규칙
-- summary: 이유 텍스트에서 드러난 성향을 2~3문장 느낌으로 40~60자
-- strengths: 긍정 신호를 1~3개, 각 40~60자
-- areas_to_improve: 균형/보완 포인트 1~3개, 각 40~60자
-- 어투: 제안형·중립형(비난 금지)
-
-다음 형식으로 응답하세요:
+■ 출력(JSON):
 {
-  "decision": "pass | reject",
-  "reject_reason": "null | EMPTY | PROFANITY | LENGTH | LOW_SIGNIFICANCE",
-  "scores": {
-    "semantic_relevance": "0~10",
-    "specificity": "0~10", 
-    "expression_quality": "0~10",
-    "weighted_total": "0~10"
-  },
-  "message": "사용자에게 보여줄 1줄 피드백",
-  "outputs": {
-    "summary": "40~60자",
-    "strengths": ["각 40~60자, 최대 3개"],
-    "areas_to_improve": ["각 40~60자, 최대 3개"]
+  "feedback": null | { ...피드백 출력 스키마... },
+  "mapping": null | {
+    "pattern": "A/B 5자",
+    "type_name": "매핑된 유형명",
+    "type_index": 1~32 (선택사항),
+    "details": {
+      "short_intro": "...",
+      "long_intro": "...",
+      "strengths": ["..."],
+      "areas_to_improve": ["..."],
+      "best_match_pm": "...",
+      "contrasting_pm": "..."
+    }
   }
-}`
+}
+
+==============================
+[1] 피드백 생성 및 예외처리 규칙
+==============================
+
+당신은 "피드백 생성 및 예외처리 시스템"입니다.  
+입력은 다음 JSON 형식으로 주어집니다:
+
+{
+  "question_id": "Q1" ~ "Q5",
+  "selected_option": "A" | "B",
+  "reason": "문자열"
+}
+
+아래의 규칙을 순서대로 적용하세요.
+
+-----------------------------------------
+1️⃣ CLEANUP 단계
+-----------------------------------------
+- reason 문자열에서 특수문자, 이모티콘, 구두점(.,!?~@#$/%^&* 등)을 제거합니다.
+- 연속된 공백은 하나로 축소합니다.
+- 띄어쓰기, 맞춤법, 문법 오류는 무시합니다.
+- 길이 계산 시 공백 제외 기준(length_no_space)을 사용합니다.
+
+-----------------------------------------
+2️⃣ EMPTY CHECK
+-----------------------------------------
+- length_no_space == 0 → reject("EMPTY", "답변이 입력되지 않았습니다. 다시 작성해주세요.")
+
+-----------------------------------------
+3️⃣ PROFANITY CHECK
+-----------------------------------------
+- 비속어나 모욕적 표현이 포함되면 → reject("PROFANITY", "부적절한 표현이 섞여있습니다. 다시 작성해주세요.")
+- 금칙어 예시: 씨발, 시발, ㅆㅂ, 병신, ㅂㅅ, 개같, 좆, 존나, fuck, shit, bitch, asshole
+- 대소문자, 특수기호, 띄어쓰기 섞여도 탐지합니다.
+
+-----------------------------------------
+4️⃣ LENGTH CHECK
+-----------------------------------------
+- 공백 제외 길이 < 5 또는 > 50 → reject("LENGTH", "답변의 길이가 부적절합니다. (5~50자)")
+
+-----------------------------------------
+5️⃣ 유의미도 점수 계산
+-----------------------------------------
+✅ 모든 검사를 통과했다면 아래 점수를 계산합니다.
+
+초기값:
+- semantic_relevance = 6.0
+- specificity = 6.0
+- expression_quality = 8.0
+
+총합 계산:
+총합 = 의미일치도*0.4 + 구체성*0.3 + 표현품질*0.3  
+PASS 기준: 총합 ≥ 7.0
+
+-----------------------------------------
+6️⃣ 세부 점수 규칙
+-----------------------------------------
+
+🧩 의미일치도 (semantic_relevance)
+- 직접 일치 단서 1개 이상 → +3.0
+- 암시적 의미 단서 1개 이상 → +2.0
+- 의사결정 표현(~하자/해야/먼저/진행) → +1.0
+- 무관 단어(점심, 배고파, 날씨 등) 포함 시 → -3.0
+- 0~10 사이로 클램프
+
+암시 단서 예시:
+- Q1-A: 직접, 써보, 느껴, 만져, 현장, 고객입장  
+- Q1-B: 데이터, 수치, 지표, 로그, 분석, 패턴  
+- Q2-A: 빨리, 서둘, 즉시, 먼저, 시간없, 급하, 빠르  
+- Q2-B: 검증, 테스트, 브랜드, 품질, 리스크, 신중  
+- Q3-A: 일정, 우선순위, 대안, 현실적, 계획  
+- Q3-B: 협업, 공감, 소통, 조율, 배려  
+- Q4-A: 목표, 조정, 재배분, 효율, 집중  
+- Q4-B: 완성도, 지원, 도와, 케어, 품질우선  
+- Q5-A: 성과, 지표, 유입, 성장, 매출, 퍼센트  
+- Q5-B: 만족, 경험, 평가, 피드백, 충성, 사용자중심
+
+🧩 구체성 (specificity)
+- 행동/절차 단어: 하자, 한다, 진행, 분석, 정리 → +1.5  
+- 대상/맥락 단서: 인물, 역할, 상황, 목표, 리스크 → +1.5  
+- 도구/자료: 데이터, 로그, 인터뷰, 설문, 실험, 프로토타입 → +2.0  
+- 논리 연결어: 왜냐하면, 그래서, 때문에, 즉, 결론적으로 → +1.0  
+- 위 중 하나라도 있으면 최소 7.0으로 보정  
+- 0~10 사이로 클램프
+
+🧩 표현품질 (expression_quality)
+- 기본값 8.0
+- 길이(공백 제외) ≥ 10 → +1.0  
+- 연결어(그래서/때문에/즉 등) 존재 → +1.0  
+- 의미 불명확·무관 주제 → -3.0  
+- 0~10 사이로 클램프
+
+-----------------------------------------
+7️⃣ 최종 판정
+-----------------------------------------
+- 총합 < 7 → reject("LOW_SIGNIFICANCE", "답변이 다소 모호합니다. 좀 더 구체적으로 작성해주세요.")
+- 총합 ≥ 7 → pass
+
+-----------------------------------------
+8️⃣ 출력(JSON 형식)
+-----------------------------------------
+결과는 반드시 아래 형식으로 출력합니다.
+
+{
+  "decision": "pass" | "reject",
+  "reject_reason": null | "EMPTY" | "PROFANITY" | "LENGTH" | "LOW_SIGNIFICANCE",
+  "scores": {
+    "semantic_relevance": 0~10,
+    "specificity": 0~10,
+    "expression_quality": 0~10,
+    "weighted_total": 0~10
+  },
+  "message": "사용자에게 보여줄 피드백 문장",
+  "outputs": {
+    "summary": "40~60자 요약 문장",
+    "strengths": ["40~60자 문장 최대 3개"],
+    "areas_to_improve": ["40~60자 문장 최대 3개"]
+  }
+}
+
+==============================
+[2] 32유형 매핑 규칙
+==============================
+- pattern → analyzing.js 내 1:1 매핑 테이블에서 해당 유형을 조회
+- 결과 객체는 아래 형태로 구성:
+{
+  "pattern": "ABBAB",
+  "type_name": "예: 싹싹 김치 형",
+  "details": {
+    "short_intro": "...",
+    "long_intro": "...",
+    "strengths": ["...", "..."],
+    "areas_to_improve": ["...", "..."],
+    "best_match_pm": "...",
+    "contrasting_pm": "..."
+  }
+}
+
+==============================
+[3] 최종 출력 포맷(반드시 준수)
+==============================
+- 항상 다음 최상위 JSON 키를 포함:
+{
+  "feedback": null | {...피드백 출력 스키마...},
+  "mapping": null | {...매핑 출력 스키마...}
+}
+- 어느 한 쪽 입력이 없으면 해당 키에 null을 넣어 반환`
         },
         {
             role: "user",
-            content: `사용자 답변: "${reason}"
-선택한 옵션: ${selectedOption}
-문항 ID: ${questionId}
-의미 그룹: ${JSON.stringify(meaningGroups[questionId] || {})}
-
-위 답변을 분석하여 예외처리 여부와 유의미도를 판정하고, 통과 시 PM 성향 분석을 제공하세요.`
+            content: `{
+  "reason_input": {
+    "question_id": "${questionId}",
+    "selected_option": "${selectedOption}",
+    "reason": "${reason}"
+  },
+  "pattern": "${pattern}"
+}`
         }
     ];
     
     const requestBody = {
         model: "gpt-3.5-turbo",
         messages: messages,
-        max_tokens: 800,
+        max_tokens: 1500,
         temperature: 0.7
     };
     
@@ -594,16 +708,16 @@ function updateChoices() {
             "출시만 서두르다 우리 브랜드 이미지가 떨어질 수도 있어. 충분한 테스트 후에 퀄리티 있는 상품으로 출시하는 것이 맞지."
         ],
         [
-            "\"일정 내 가능한 대안부터 우선순위화해서 정리해봅시다.\"",
-            "\"한 팀인만큼 서로의 입장에서 한번 더 생각해보고 의견차이를 좁혀봅시다.\""
+            "일정 내 가능한 대안부터 우선순위화해서 정리해봅시다.",
+            "한 팀인만큼 서로의 입장에서 한번 더 생각해보고 의견차이를 좁혀봅시다."
         ],
         [
-            "\"목표를 80% 달성으로 조정하고 업무를 재배분합시다.\"",
-            "\"속도보단 완성도를 봅시다. 제가 일정 정리 도와드릴게요.\""
+            "목표를 80% 달성으로 조정하고 업무를 재배분합시다.",
+            "속도보단 완성도를 봅시다. 제가 일정 정리 도와드릴게요."
         ],
         [
-            "\"신규 유입유저가 10%를 넘을 수 있도록 하겠습니다!\"",
-            "\"사용자 만족도가 80%를 넘을 수 있도록 하겠습니다!\""
+            "신규 유입유저가 10%를 넘을 수 있도록 하겠습니다!",
+            "사용자 만족도가 80%를 넘을 수 있도록 하겠습니다!"
         ]
     ];
     

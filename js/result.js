@@ -293,51 +293,55 @@ function updateCompatibilityInfo(result) {
 
 // 이유 작성된 경우 섹션 표시
 function showWithReasonsSections(result) {
-    console.log('🤖 AI 맞춤 분석 표시 시작:', result);
+    console.log('🤖 통합 분석 결과 표시 시작:', result);
     
-    // 사용자 입력 이유들에서 AI 분석 결과 수집
+    // 사용자 입력 이유들에서 통합 분석 결과 수집
     const userTestData = localStorage.getItem('userTestData');
-    let aiAnalysisResults = [];
+    let feedbackResults = [];
+    let mappingResults = [];
     
     if (userTestData) {
         try {
             const data = JSON.parse(userTestData);
             if (data.reasons) {
-                aiAnalysisResults = data.reasons
-                    .filter(reason => reason.analysis) // analysis가 있는 것만
-                    .map(reason => reason.analysis);
+                data.reasons.forEach(reason => {
+                    if (reason.feedback && reason.feedback.outputs) {
+                        feedbackResults.push(reason.feedback.outputs);
+                    }
+                });
             }
         } catch (error) {
             console.error('사용자 데이터 파싱 오류:', error);
         }
     }
     
-    console.log('📊 수집된 AI 분석 결과:', aiAnalysisResults);
+    console.log('📊 수집된 피드백 결과:', feedbackResults);
+    console.log('📊 수집된 매핑 결과:', mappingResults);
     
-    // AI 분석 결과 종합
-    let combinedAnalysis = {
+    // 피드백 결과 종합
+    let combinedFeedback = {
         summary: '',
         strengths: [],
         areas_to_improve: []
     };
     
-    if (aiAnalysisResults.length > 0) {
-        // 모든 분석 결과를 종합
-        aiAnalysisResults.forEach(analysis => {
-            if (analysis.summary) {
-                combinedAnalysis.summary += analysis.summary + ' ';
+    if (feedbackResults.length > 0) {
+        // 모든 피드백 결과를 종합
+        feedbackResults.forEach(feedback => {
+            if (feedback.summary) {
+                combinedFeedback.summary += feedback.summary + ' ';
             }
-            if (analysis.strengths) {
-                combinedAnalysis.strengths.push(...analysis.strengths);
+            if (feedback.strengths) {
+                combinedFeedback.strengths.push(...feedback.strengths);
             }
-            if (analysis.areas_to_improve) {
-                combinedAnalysis.areas_to_improve.push(...analysis.areas_to_improve);
+            if (feedback.areas_to_improve) {
+                combinedFeedback.areas_to_improve.push(...feedback.areas_to_improve);
             }
         });
         
         // 중복 제거 및 길이 제한
-        combinedAnalysis.strengths = [...new Set(combinedAnalysis.strengths)].slice(0, 3);
-        combinedAnalysis.areas_to_improve = [...new Set(combinedAnalysis.areas_to_improve)].slice(0, 3);
+        combinedFeedback.strengths = [...new Set(combinedFeedback.strengths)].slice(0, 3);
+        combinedFeedback.areas_to_improve = [...new Set(combinedFeedback.areas_to_improve)].slice(0, 3);
     }
     
     // AI 분석 섹션 표시
@@ -346,7 +350,7 @@ function showWithReasonsSections(result) {
         aiAnalysisBox.style.display = 'block';
         const aiAnalysisText = aiAnalysisBox.querySelector('p');
         if (aiAnalysisText) {
-            const aiAnalysisContent = combinedAnalysis.summary || result.aiAnalysis || 'AI 맞춤 분석 결과를 불러올 수 없습니다.';
+            const aiAnalysisContent = combinedFeedback.summary || result.aiAnalysis || 'AI 맞춤 분석 결과를 불러올 수 없습니다.';
             aiAnalysisText.textContent = aiAnalysisContent;
             console.log('✅ AI 맞춤 분석 표시:', aiAnalysisContent);
         }
@@ -358,8 +362,8 @@ function showWithReasonsSections(result) {
         strengthsBox.style.display = 'block';
         const strengthsText = strengthsBox.querySelector('p');
         if (strengthsText) {
-            const strengthsContent = combinedAnalysis.strengths.length > 0 
-                ? combinedAnalysis.strengths.join(' ') 
+            const strengthsContent = combinedFeedback.strengths.length > 0 
+                ? combinedFeedback.strengths.join(' ') 
                 : result.strengths || '강점 정보를 불러올 수 없습니다.';
             strengthsText.textContent = strengthsContent;
             console.log('✅ 나만의 강점 표시:', strengthsContent);
@@ -372,8 +376,8 @@ function showWithReasonsSections(result) {
         improvementsBox.style.display = 'block';
         const improvementsText = improvementsBox.querySelector('p');
         if (improvementsText) {
-            const improvementsContent = combinedAnalysis.areas_to_improve.length > 0 
-                ? combinedAnalysis.areas_to_improve.join(' ') 
+            const improvementsContent = combinedFeedback.areas_to_improve.length > 0 
+                ? combinedFeedback.areas_to_improve.join(' ') 
                 : result.improvements || '보완점 정보를 불러올 수 없습니다.';
             improvementsText.textContent = improvementsContent;
             console.log('✅ 내가 보완할 부분 표시:', improvementsContent);
