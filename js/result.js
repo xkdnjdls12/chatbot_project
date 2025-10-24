@@ -274,7 +274,7 @@ function showWithReasonsSections(result) {
         aiAnalysisBox.style.display = 'block';
         const aiAnalysisText = aiAnalysisBox.querySelector('p');
         if (aiAnalysisText) {
-            const aiAnalysisContent = combinedFeedback.summary || result.aiAnalysis || 'AI 맞춤 분석 결과를 불러올 수 없습니다.';
+            const aiAnalysisContent = result.aiAnalysis || 'AI 맞춤 분석 결과를 불러올 수 없습니다.';
             aiAnalysisText.textContent = aiAnalysisContent;
             console.log('✅ AI 맞춤 분석 표시:', aiAnalysisContent);
         }
@@ -285,12 +285,17 @@ function showWithReasonsSections(result) {
     if (strengthsBox) {
         strengthsBox.style.display = 'block';
         const strengthsText = strengthsBox.querySelector('p');
+        const strengthsTitle = strengthsBox.querySelector('h3');
+        
         if (strengthsText) {
-            const strengthsContent = combinedFeedback.strengths.length > 0 
-                ? combinedFeedback.strengths.join(' ') 
-                : result.strengths || '강점 정보를 불러올 수 없습니다.';
+            const strengthsContent = result.strengths || '강점 정보를 불러올 수 없습니다.';
             strengthsText.textContent = strengthsContent;
             console.log('✅ 나만의 강점 표시:', strengthsContent);
+        }
+        
+        if (strengthsTitle && result.strengthsTitle) {
+            strengthsTitle.textContent = result.strengthsTitle;
+            console.log('✅ 강점 라벨 업데이트:', result.strengthsTitle);
         }
     }
     
@@ -299,12 +304,17 @@ function showWithReasonsSections(result) {
     if (improvementsBox) {
         improvementsBox.style.display = 'block';
         const improvementsText = improvementsBox.querySelector('p');
+        const improvementsTitle = improvementsBox.querySelector('h3');
+        
         if (improvementsText) {
-            const improvementsContent = combinedFeedback.areas_to_improve.length > 0 
-                ? combinedFeedback.areas_to_improve.join(' ') 
-                : result.improvements || '보완점 정보를 불러올 수 없습니다.';
+            const improvementsContent = result.improvements || '보완점 정보를 불러올 수 없습니다.';
             improvementsText.textContent = improvementsContent;
             console.log('✅ 내가 보완할 부분 표시:', improvementsContent);
+        }
+        
+        if (improvementsTitle && result.improvementsTitle) {
+            improvementsTitle.textContent = result.improvementsTitle;
+            console.log('✅ 보완점 라벨 업데이트:', result.improvementsTitle);
         }
     }
 }
@@ -324,9 +334,16 @@ function showWithoutReasonsSections(result) {
     if (strengthsBox) {
         strengthsBox.style.display = 'block';
         const strengthsText = strengthsBox.querySelector('p');
+        const strengthsTitle = strengthsBox.querySelector('h3');
+        
         if (strengthsText) {
             console.log('💪 강점 텍스트 설정:', result.strengths);
             strengthsText.textContent = result.strengths || '강점 정보를 불러올 수 없습니다.';
+        }
+        
+        if (strengthsTitle && result.strengthsTitle) {
+            strengthsTitle.textContent = result.strengthsTitle;
+            console.log('✅ 강점 라벨 업데이트:', result.strengthsTitle);
         }
     }
     
@@ -335,9 +352,16 @@ function showWithoutReasonsSections(result) {
     if (improvementsBox) {
         improvementsBox.style.display = 'block';
         const improvementsText = improvementsBox.querySelector('p');
+        const improvementsTitle = improvementsBox.querySelector('h3');
+        
         if (improvementsText) {
             console.log('🔧 보완점 텍스트 설정:', result.improvements);
             improvementsText.textContent = result.improvements || '보완점 정보를 불러올 수 없습니다.';
+        }
+        
+        if (improvementsTitle && result.improvementsTitle) {
+            improvementsTitle.textContent = result.improvementsTitle;
+            console.log('✅ 보완점 라벨 업데이트:', result.improvementsTitle);
         }
     }
 }

@@ -66,15 +66,19 @@ async function performAnalysis() {
         console.log('✅ 32가지 유형 매핑 완료:', pmTypeResult);
         
         if (hasReasons) {
-            // 이유가 1개 이상 작성된 경우 - LLM 분석 + 32가지 유형 매핑
-            console.log('🤖 OpenAI API 호출 시작...');
-            const analysisResult = await callOpenAIAnalysis(userData.reasons);
+            // 이유가 1개 이상 작성된 경우 - 새로운 LLM 프롬프트 사용
+            console.log('🤖 새로운 LLM 프롬프트로 분석 시작...');
+            const analysisResult = await callNewLLMAnalysis(userData.choices, userData.reasons);
             console.log('✅ AI 분석 결과:', analysisResult);
             
             // 32가지 유형 정보와 AI 분석 결과를 결합
             const combinedResult = {
                 ...pmTypeResult, // 32가지 유형 정보
-                aiAnalysis: analysisResult, // AI 분석 결과
+                aiAnalysis: analysisResult.aiAnalysis,
+                strengths: analysisResult.strengths,
+                improvements: analysisResult.improvements,
+                strengthsTitle: '나만의 강점',
+                improvementsTitle: '내가 보완할 부분',
                 feedbackType: 'withReasons'
             };
             
@@ -87,6 +91,10 @@ async function performAnalysis() {
             console.log('📋 32가지 유형 매핑만 사용');
             const fixedFeedback = {
                 ...pmTypeResult,
+                strengths: '높은 추진력과 결단력을 기반으로 목표를 명확히 설정하고 신속하게 실행하는 성과 중심형 리더십을 보유.',
+                improvements: '성과 중심 사고로 인해 공감과 피드백 수용이 다소 부족할 수 있음. 팀원 의견 반영과 소통 강화를 통해 리더십 균형 향상이 필요함.',
+                strengthsTitle: '강점',
+                improvementsTitle: '보완할 부분',
                 feedbackType: 'withoutReasons'
             };
             localStorage.setItem('analysisResult', JSON.stringify(fixedFeedback));
@@ -108,8 +116,8 @@ async function performAnalysis() {
     }
 }
 
-// OpenAI API 호출
-async function callOpenAIAnalysis(reasons) {
+// 새로운 LLM 프롬프트를 사용한 OpenAI API 호출
+async function callNewLLMAnalysis(choices, reasons) {
     console.log('🔑 API 키 로드 중...');
     
     // .env 파일에서 API 키 로드
@@ -123,43 +131,85 @@ async function callOpenAIAnalysis(reasons) {
         throw new Error('OpenAI API 키를 찾을 수 없습니다.');
     }
     
-    const allReasons = reasons.map(reason => 
-        `시나리오 ${reason.scenario}: 선택지 "${reason.choice}" - 이유: ${reason.reason}`
-    ).join('\n');
+    // 사용자 유형 코드 생성
+    const typeCode = choices.map(choice => choice.choice).join('');
+    console.log('📊 사용자 유형 코드:', typeCode);
     
-    console.log('📝 분석할 사용자 답변:', allReasons);
+    // 사용자 이유 리스트 생성
+    const userReasons = reasons.map(reason => reason.reason).filter(reason => reason && reason.trim() !== '');
+    console.log('📝 사용자 이유 리스트:', userReasons);
+    
+    // 32가지 유형 카탈로그에서 해당 유형 정보 가져오기
+    const pmTypeResult = getFixedFeedback(choices);
     
     const messages = [
         {
             role: "system",
-            content: `당신은 PM 전문가입니다. 사용자가 5개 시나리오에서 입력한 주관식 답변을 분석하여 개인화된 피드백을 생성해주세요.
+            content: `역할: 너는 PM 성향 분석 카테고라이저이자 요약 작성기다. 주어진 "사용자 유형 코드(예: AABAA)", "유형별 고정값 카탈로그(32종)", "PM 핵심 지표 정의(5가지)", "사용자가 적은 이유 리스트"를 바탕으로 다음 3개 항목을 생성하라.
 
-**피드백 생성 원칙:**
-1. AI맞춤분석: 사용자의 전반적 성향을 2~3문장으로 요약 (40자 이상 60자 이내)
-2. 나만의강점: 주관식 이유에서 도출된 긍정적 특징을 3개 이하, 문장 형식으로 표현 (40자 이상 60자 이내)
-3. 내가보완할부분: 선택 간의 불균형 또는 단점 가능성을 3개 이하 요약, 문장 형식으로 표현 (40자 이상 60자 이내)
+입력(Inputs)
+type_code: 사용자의 성향 코드. 예: "AABAA"
+type_catalog: 32가지 유형별 결과값 목록(간단 소개/자세한 소개/강점 고정값/보완할 부분 고정값 포함).
+pm_core_indicators: 5개 핵심 지표 정의
+- 문제 해결 방식 (A: 직관형 / B: 논리형)
+- 실행 스타일 (A: 빠른 실행 우선 / B: 리스크 관리 우선)
+- 커뮤니케이션 (A: 직설형 / B: 조율형)
+- 리더십 (A: 드라이브형 / B: 서포트형)
+- 전략적 사고 (A: 성과중심형 / B: 가치중심형)
+user_reasons: 사용자가 입력한 "이유" 텍스트 배열(0개 이상). 예: ["데이터 중심으로 일정 관리했습니다", "리스크를 먼저 점검합니다", "팀 의견을 먼저 듣습니다"]
 
-**응답 형식:**
-AI맞춤분석: [2~3문장 요약, 40-60자]
-나만의강점: [긍정적 특징 3개 이하, 40-60자]
-내가보완할부분: [개선점 3개 이하, 40-60자]
+산출물(Outputs) — 세 항목을 모두 생성
+1. AI 맞춤분석 (aiAnalysis)
+- 반영 요소: type_code로 해석한 핵심 지표 성향 + user_reasons의 실제 단서 → 둘 다 녹여라.
+- 어조: 긍정적, 전문적인 톤.
+- 길이: 공백 제외 길이 80자 이상 100자 미만.
+- 금지: 아래 2)·3)와 내용 중복 금지.
 
-한국어로 응답하고, 각 섹션은 명확하게 구분해주세요.`
+2. 나만의 강점 (strengths)
+- 반영 요소: type_catalog[type_code]의 강점 고정값 + user_reasons의 강점 측면 단서 → 둘 다 녹여라.
+- 어조: 긍정적, 구체적.
+- 길이: 공백 제외 80–99자.
+- 금지: 1)·3)와 내용 중복 금지.
+
+3. 내가 보완할 부분 (improvements)
+- 반영 요소: type_catalog[type_code]의 보완 고정값 + user_reasons의 개선 포인트 단서 → 둘 다 녹여라.
+- 어조: 긍정적(성장 가능성 중심), 비난 표현 금지.
+- 길이: 공백 제외 80–99자.
+- 금지: 1)·2)와 내용 중복 금지.
+
+작성 규칙(중요)
+- 중복 방지: 생성 순서는 aiAnalysis → strengths → improvements. 뒤 항목을 만들 때 앞에서 사용한 문장 또는 10자 이상 구절이 겹치면 다른 표현으로 바꿔라.
+- 증거 결합: user_reasons에서 핵심 키워드를 추출해 자연스럽게 녹여라(예: "리스크 선점", "데이터 기반 일정", "선경청"). 이유가 1개뿐이어도 반드시 반영하라.
+- 정확한 길이 제어: 최종 산출물은 공백을 제외한 문자 수를 기준으로 80–99자 범위여야 한다. 초과 시 문장 경계 우선으로 자연스럽게 축약, 부족 시 의미 훼손 없이 보강.
+- 금지 사항: 목록/불릿, 해시태그, 이모지, 따옴표 반복, 자기지시 문구("나는…", "이 모델은…") 금지.
+- 풍부함: 같은 의미 반복 대신 구체적 행동/상황/효과를 넣어라(예: "리스크 선점으로 일정 변동 최소화").
+
+출력 형식(Output Schema)
+반드시 아래 JSON만 출력하라. JSON 외 텍스트 금지.
+{
+  "aiAnalysis": "<string>",
+  "strengths": "<string>",
+  "improvements": "<string>"
+}`
         },
         {
             role: "user",
-            content: `사용자가 5개 시나리오에서 입력한 주관식 답변들:\n${allReasons}\n\n이 답변들을 종합하여 개인화된 PM 분석을 제공해주세요.`
+            content: `type_code: "${typeCode}"
+type_catalog: ${JSON.stringify(pmTypeResult)}
+user_reasons: ${JSON.stringify(userReasons)}
+
+위 정보를 바탕으로 3개 항목을 생성해주세요.`
         }
     ];
     
     const requestBody = {
         model: "gpt-3.5-turbo",
         messages: messages,
-        max_tokens: 1500,
+        max_tokens: 1000,
         temperature: 0.7
     };
     
-    console.log('🚀 OpenAI API 요청 시작...');
+    console.log('🚀 새로운 LLM 프롬프트로 OpenAI API 요청 시작...');
     console.log('📡 요청 URL:', OPENAI_API_URL);
     
     const response = await fetch(OPENAI_API_URL, {
@@ -182,7 +232,25 @@ AI맞춤분석: [2~3문장 요약, 40-60자]
     const data = await response.json();
     console.log('✅ API 응답 데이터:', data);
     
-    return data.choices[0].message.content;
+    const responseText = data.choices[0].message.content;
+    console.log('📝 LLM 응답 텍스트:', responseText);
+    
+    // JSON 파싱
+    try {
+        const parsedResult = JSON.parse(responseText);
+        console.log('✅ JSON 파싱 성공:', parsedResult);
+        return parsedResult;
+    } catch (parseError) {
+        console.error('❌ JSON 파싱 실패:', parseError);
+        console.log('📝 원본 응답:', responseText);
+        
+        // 파싱 실패 시 기본값 반환
+        return {
+            aiAnalysis: '사용자의 선택 패턴을 분석한 결과, 체계적이고 논리적인 접근 방식을 보여주는 PM으로 평가됩니다.',
+            strengths: '높은 추진력과 결단력을 기반으로 목표를 명확히 설정하고 신속하게 실행하는 성과 중심형 리더십을 보유.',
+            improvements: '성과 중심 사고로 인해 공감과 피드백 수용이 다소 부족할 수 있음. 팀원 의견 반영과 소통 강화를 통해 리더십 균형 향상이 필요함.'
+        };
+    }
 }
 
 // 고정값 피드백 생성
