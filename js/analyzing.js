@@ -62,7 +62,23 @@ async function performAnalysis() {
         
         // 32가지 유형 매핑 (이유 작성 여부와 관계없이 항상 수행)
         console.log('🔍 32가지 유형 매핑 시작...');
-        const pmTypeResult = getFixedFeedback(userData.choices);
+        
+        // choices 데이터 확인 및 정리
+        let choicesData = userData.choices || [];
+        console.log('📊 원본 choices 데이터:', choicesData);
+        console.log('📊 choices 데이터 길이:', choicesData.length);
+        
+        // choices가 없거나 비어있는 경우 경고
+        if (!choicesData || choicesData.length === 0) {
+            console.error('❌ choices 데이터가 없습니다!');
+            console.log('📊 전체 userData:', userData);
+            // 기본값으로 빈 배열 사용
+            choicesData = [];
+        }
+        
+        console.log('📊 최종 choices 데이터:', choicesData);
+        
+        const pmTypeResult = getFixedFeedback(choicesData);
         console.log('✅ 32가지 유형 매핑 완료:', pmTypeResult);
         
         if (hasReasons) {
@@ -396,6 +412,25 @@ user_reasons: []
 function getFixedFeedback(choices) {
     console.log('🔍 선택지 분석 중:', choices);
     
+    // 선택지가 없는 경우 기본 유형 반환
+    if (!choices || choices.length === 0) {
+        console.warn('⚠️ 선택지가 없습니다. 기본 유형을 반환합니다.');
+        return {
+            pmType: '알파메일 PM',
+            simpleIntro: '불필요한 감정소모는 NO!',
+            detailedIntro: '모든 일엔 기준과 프로세스가 있어야 한다고 믿는 PM계의 냉철한 현실주의자.',
+            strengths: '높은 추진력과 결단력을 기반으로 목표를 명확히 설정하고 신속하게 실행하는 성과 중심형 리더십을 보유.',
+            improvements: '성과 중심 사고로 인해 공감과 피드백 수용이 다소 부족할 수 있음.',
+            compatiblePM: '싹싹김치 형',
+            compatiblePMReason: '정리력과 커뮤니케이션이 리더십을 보완해줘요!',
+            compatiblePMImage: 'char5.png',
+            incompatiblePM: '멈춰! 형',
+            incompatiblePMReason: '서로의 주도권이 부딪할 수 있어요!',
+            incompatiblePMImage: 'char6.png',
+            image: 'char4.png'
+        };
+    }
+    
     // 선택지 패턴에 따른 고정 피드백 매칭
     const choicePattern = analyzeChoicePattern(choices);
     console.log('📊 분석된 패턴:', choicePattern);
@@ -434,6 +469,10 @@ function analyzeChoicePattern(choices) {
         if (text.includes('직접 써보면서') || text.includes('감을 잡아보자')) return 'A'; // 직관형
         if (text.includes('데이터를 먼저') || text.includes('분석해보자')) return 'B'; // 논리형
         
+        // 실제 선택지 텍스트 매칭 (chatbot.html 기반)
+        if (text.includes('최근 제품을 직접 써보면서 어디서 불편함이 느껴지는지 감을 잡아보자')) return 'A';
+        if (text.includes('데이터를 먼저 확인해서 어떤 단계에서 이탈이 발생했는지 분석해보자')) return 'B';
+        
         // 시나리오 2: 실행스타일
         if (text.includes('빠르게 점유') || text.includes('빠르게 출시')) return 'A'; // 빠른 실행
         if (text.includes('브랜드 이미지') || text.includes('충분한 테스트')) return 'B'; // 리스크 관리
@@ -450,8 +489,31 @@ function analyzeChoicePattern(choices) {
         if (text.includes('신규 유입유저') || text.includes('10%를 넘을')) return 'A'; // 성과중심형
         if (text.includes('사용자 만족도') || text.includes('80%를 넘을')) return 'B'; // 가치중심형
         
+        // 매칭되지 않은 경우 더 정확한 패턴 매칭 시도
         console.warn(`⚠️ 매칭되지 않은 선택지: ${text}`);
-        return 'A'; // 기본값
+        console.log(`📝 전체 텍스트: "${text}"`);
+        
+        // 키워드 기반 패턴 추정 (더 정확한 매칭)
+        const aKeywords = ['직접', '빠르게', '우선순위', '80%', '신규', '점유', '출시', '드라이브', '성과'];
+        const bKeywords = ['데이터', '브랜드', '서로', '완성도', '사용자', '만족도', '충분한', '테스트', '조율'];
+        
+        const aMatches = aKeywords.filter(keyword => text.includes(keyword)).length;
+        const bMatches = bKeywords.filter(keyword => text.includes(keyword)).length;
+        
+        console.log(`🔍 A 키워드 매칭: ${aMatches}, B 키워드 매칭: ${bMatches}`);
+        
+        if (aMatches > bMatches) {
+            console.log('🔍 A 패턴으로 추정');
+            return 'A';
+        } else if (bMatches > aMatches) {
+            console.log('🔍 B 패턴으로 추정');
+            return 'B';
+        }
+        
+        // 동일한 매칭 수인 경우 시나리오별 기본값
+        const scenarioDefault = index === 0 ? 'A' : (index % 2 === 0 ? 'A' : 'B');
+        console.log(`🎯 시나리오 ${index + 1} 기본값: ${scenarioDefault}`);
+        return scenarioDefault;
     }).join('');
     
     console.log('🔍 분석된 패턴:', pattern);

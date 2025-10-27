@@ -614,12 +614,22 @@ function showWithReasonsSections(result) {
         }
     }
     
-    // 강점 섹션 표시
+    // 강점 섹션 표시 (제목 유지: "나만의 강점")
     const strengthsBox = document.querySelector('.analysis-box.strengths');
     if (strengthsBox) {
         strengthsBox.style.display = 'block';
+        const strengthsTitle = strengthsBox.querySelector('h4');
         const strengthsText = strengthsBox.querySelector('p');
+<<<<<<< Updated upstream
         const strengthsTitle = strengthsBox.querySelector('h3');
+=======
+        
+        // 제목 유지 (이유 작성된 경우)
+        if (strengthsTitle) {
+            strengthsTitle.textContent = '나만의 강점';
+            console.log('💪 강점 제목 유지: "나만의 강점"');
+        }
+>>>>>>> Stashed changes
         
         if (strengthsText) {
             const strengthsContent = result.strengths || '강점 정보를 불러올 수 없습니다.';
@@ -633,12 +643,22 @@ function showWithReasonsSections(result) {
         }
     }
     
-    // 보완점 섹션 표시
+    // 보완점 섹션 표시 (제목 유지: "내가 보완할 부분")
     const improvementsBox = document.querySelector('.analysis-box.improvements');
     if (improvementsBox) {
         improvementsBox.style.display = 'block';
+        const improvementsTitle = improvementsBox.querySelector('h4');
         const improvementsText = improvementsBox.querySelector('p');
+<<<<<<< Updated upstream
         const improvementsTitle = improvementsBox.querySelector('h3');
+=======
+        
+        // 제목 유지 (이유 작성된 경우)
+        if (improvementsTitle) {
+            improvementsTitle.textContent = '내가 보완할 부분';
+            console.log('🔧 보완점 제목 유지: "내가 보완할 부분"');
+        }
+>>>>>>> Stashed changes
         
         if (improvementsText) {
             const improvementsContent = result.improvements || '보완점 정보를 불러올 수 없습니다.';
@@ -663,12 +683,22 @@ function showWithoutReasonsSections(result) {
         aiAnalysisBox.style.display = 'none';
     }
     
-    // 강점 섹션 표시
+    // 강점 섹션 표시 (제목 변경: "나만의 강점" → "강점")
     const strengthsBox = document.querySelector('.analysis-box.strengths');
     if (strengthsBox) {
         strengthsBox.style.display = 'block';
+        const strengthsTitle = strengthsBox.querySelector('h4');
         const strengthsText = strengthsBox.querySelector('p');
+<<<<<<< Updated upstream
         const strengthsTitle = strengthsBox.querySelector('h3');
+=======
+        
+        // 제목 변경
+        if (strengthsTitle) {
+            strengthsTitle.textContent = '강점';
+            console.log('💪 강점 제목 변경: "나만의 강점" → "강점"');
+        }
+>>>>>>> Stashed changes
         
         if (strengthsText) {
             console.log('💪 강점 텍스트 설정:', result.strengths);
@@ -681,12 +711,22 @@ function showWithoutReasonsSections(result) {
         }
     }
     
-    // 보완점 섹션 표시
+    // 보완점 섹션 표시 (제목 변경: "내가 보완할 부분" → "보완할 부분")
     const improvementsBox = document.querySelector('.analysis-box.improvements');
     if (improvementsBox) {
         improvementsBox.style.display = 'block';
+        const improvementsTitle = improvementsBox.querySelector('h4');
         const improvementsText = improvementsBox.querySelector('p');
+<<<<<<< Updated upstream
         const improvementsTitle = improvementsBox.querySelector('h3');
+=======
+        
+        // 제목 변경
+        if (improvementsTitle) {
+            improvementsTitle.textContent = '보완할 부분';
+            console.log('🔧 보완점 제목 변경: "내가 보완할 부분" → "보완할 부분"');
+        }
+>>>>>>> Stashed changes
         
         if (improvementsText) {
             console.log('🔧 보완점 텍스트 설정:', result.improvements);
