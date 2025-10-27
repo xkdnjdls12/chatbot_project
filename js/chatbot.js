@@ -54,21 +54,16 @@ function setupEventListeners() {
         });
     });
     
-    // 액션 버튼들
-    const reasonInputBtn = document.getElementById('reasonInputBtn');
-    const nextBtn = document.getElementById('nextBtn');
+    // 버튼들
     const submitReason = document.getElementById('submitReason');
-    
-    if (reasonInputBtn) {
-        reasonInputBtn.addEventListener('click', showReasonInput);
-    }
-    
-    if (nextBtn) {
-        nextBtn.addEventListener('click', proceedToNext);
-    }
+    const backToActions = document.getElementById('backToActions');
     
     if (submitReason) {
         submitReason.addEventListener('click', submitUserReason);
+    }
+    
+    if (backToActions) {
+        backToActions.addEventListener('click', backToInitialChoices);
     }
     
     // 엔터키로 이유 제출
@@ -99,29 +94,49 @@ function handleInitialChoice(button) {
     
     console.log('사용자 선택:', choiceText);
     
-    // 초기 선택 버튼들 숨기고 액션 버튼들 표시
-    document.getElementById('initialChoices').style.display = 'none';
-    document.getElementById('actionButtons').style.display = 'flex';
-}
-
-// 이유 입력 창 표시
-function showReasonInput() {
-    // 선택한 선택지 텍스트 가져오기
-    const selectedChoice = userChoices[userChoices.length - 1];
+    // 선택한 선택지 텍스트를 프롬프트에 표시
     const promptText = document.querySelector('.prompt-text');
-    
-    // 프롬프트 텍스트를 선택한 선택지로 업데이트
-    if (promptText && selectedChoice) {
-        promptText.textContent = selectedChoice.text;
+    if (promptText) {
+        promptText.textContent = choiceText;
     }
     
-    document.getElementById('actionButtons').style.display = 'none';
+    // 초기 선택 버튼들 숨기고 이유 입력 창 표시
+    document.getElementById('initialChoices').style.display = 'none';
     document.getElementById('inputPrompt').style.display = 'block';
     
     // 입력 필드에 포커스
     setTimeout(() => {
         document.getElementById('reasonInput').focus();
     }, 100);
+}
+
+// 초기 선택으로 돌아가기
+function backToInitialChoices() {
+    // 마지막 선택을 취소
+    if (userChoices.length > 0) {
+        userChoices.pop();
+        console.log('선택 취소됨. 남은 선택:', userChoices);
+    }
+    
+    // 이유 입력 창 숨기기
+    document.getElementById('inputPrompt').style.display = 'none';
+    
+    // 초기 선택 버튼들 다시 표시
+    document.getElementById('initialChoices').style.display = 'flex';
+    
+    // 선택된 버튼 스타일 제거
+    const selectedButtons = document.querySelectorAll('.choice-button.selected');
+    selectedButtons.forEach(button => {
+        button.classList.remove('selected');
+    });
+    
+    // 입력 필드 초기화
+    const reasonInput = document.getElementById('reasonInput');
+    if (reasonInput) {
+        reasonInput.value = '';
+    }
+    
+    console.log('초기 선택으로 돌아가기');
 }
 
 // 다음으로 진행
@@ -296,8 +311,10 @@ async function submitUserReason() {
     const reasonInput = document.getElementById('reasonInput');
     const reason = reasonInput.value.trim();
     
+    // 이유가 없어도 진행 가능하도록 수정
     if (!reason) {
-        alert('이유를 입력해주세요.');
+        console.log('이유 없이 진행');
+        proceedToNext();
         return;
     }
     
@@ -809,7 +826,6 @@ function handleReasonAnalysis(analysis) {
 function resetUI() {
     // 모든 섹션을 원래 상태로 복원
     document.getElementById('initialChoices').style.display = 'flex';
-    document.getElementById('actionButtons').style.display = 'none';
     document.getElementById('inputPrompt').style.display = 'none';
     document.querySelector('.character-section').style.display = 'block';
     
