@@ -3,7 +3,8 @@
 /* 진행 상황 표시 */
 .progress-section {
     text-align: center;
-    margin-bottom: 25px;
+    margin-bottom: 2
+    5px;
 }
 
 .progress-container {
@@ -29,12 +30,6 @@
     border-right: 1px solid white;
     transition: background-color 0.3s ease;
     position: relative;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 14px;
-    font-weight: bold;
-    color: #666;
 }
 
 .progress-segment:last-child {
@@ -43,12 +38,10 @@
 
 .progress-segment.completed {
     background: #4A90E2;
-    color: white;
 }
 
 .progress-segment.current {
     background: #87CEEB;
-    color: white;
 }
 
 .time {
