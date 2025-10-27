@@ -896,6 +896,14 @@ function calculateSpecificity(text, scenario, selectedOption) {
         console.log('도구/자료 단어 발견:', toolWords.filter(word => textLower.includes(word)));
     }
     
+    // 제한 규칙 제거 (사용자 요청)
+    // if (!hasCurrentSetKeywords) {
+    //     const baseScore = 3.5;
+    //     const bonusScore = Math.min(0.5, score - baseScore);
+    //     score = baseScore + bonusScore;
+    //     console.log('현재 세트 단서 없음 - 구체성 가산 제한 적용');
+    // }
+    
     // 0~10 사이로 클램프
     return Math.max(0, Math.min(10, score));
 }
@@ -1029,6 +1037,14 @@ function calculateExpressionQuality(text, scenario, selectedOption) {
         score -= 3.0;
         console.log('무관 주제 발견');
     }
+    
+    // 제한 규칙 제거 (사용자 요청)
+    // if (!hasCurrentSetKeywords) {
+    //     const baseScore = 5.0;
+    //     const bonusScore = Math.min(0.5, score - baseScore);
+    //     score = baseScore + bonusScore;
+    //     console.log('현재 세트 단서 없음 - 표현품질 가산 제한 적용');
+    // }
     
     // 0~10 사이로 클램프
     return Math.max(0, Math.min(10, score));
@@ -1507,28 +1523,28 @@ function handleAIResponse(response) {
 function updateScenario() {
     const scenarios = [
         {
-            title: "아침부터 큰일이 났다는 소식이...",
-            description: "최근 밀크T 이용 학생 수가 갑자기 줄었다는 것이다.<br>듬이는 원인을 찾아야 한다!<br>어떻게 접근할까?",
+            title: "오마이갓! 아침부터..",
+            description: "아침에 출근을 하니 우리 회사 상품의 매출이 급감했다는 보고를 받았다. 빠르게 해결하지 않으면 큰 손해를 입을 수도 있는 상황....! 문제의 이유를 어떻게 찾아볼까?",
             character: "char4.png"
         },
         {
-            title: "다행히 원인을 찾아 빠르게 수정했다!",
-            description: "이제는 새로 추가될 AI 추천 기능 회의 시간.<br>경쟁사보다 먼저 출시할지, 완성도를 높일지 고민된다.<br>어떤 전략이 맞을까?",
+            title: "휴.. 급한 불은 껐다...",
+            description: "다행히 빠르게 문제를 해결해 큰 손해는 막았다. 오전 10시 회의가 있었지? 얼른 가보자. 경쟁사도 같은 상품을 낸다는데, 어떻게 할까?",
             character: "char5.png"
         },
         {
-            title: "디자이너와 개발자가 또 부딪쳤다.",
-            description: "\"애니메이션 효과를 더 넣자!\" vs \"지금 일정으론 힘들어요!\"<br>듬이는 둘 사이의 갈등을 해결해야 한다.<br>어떻게 말할까?",
+            title: "이건 또 무슨일이야 ㅠㅠㅠㅠ",
+            description: "회의를 마치고 돌아오니 사무실이 소란스럽다. 디자이너와 개발자가 애니메이션 기능을 두고 갈등 중이다. 당신이 입을 연다.",
             character: "char6.png"
         },
         {
-            title: "어머나! 런칭 일정이 갑자기 일주일 빨라졌다.",
-            description: "팀원들은 피곤해 보이고, 분위기가 가라앉았다.<br>듬이는 팀을 다시 힘내게 하고 싶다.<br>어떻게 이끌까?",
+            title: "시간이 없는데.. 어떡하지?",
+            description: "어머나, 그런데 일정이 앞당겨졌다... 팀이 모두 지쳐 있는데 어떡하지..? 이번 주 야근만 세 번이에요... 드미는 팀의 분위기를 바꾸고 싶다. 지금 팀을 어떻게 이끌까?",
             character: "char7.png"
         },
         {
-            title: "퇴근 직전, 부문장님이 듬이를 부르셨다.",
-            description: "\"듬이 씨, 이번 밀크T 리뉴얼의 핵심 목표가 뭐죠?\"<br>갑작스러운 질문에 잠시 멈칫한다.<br>어떻게 답할까?",
+            title: "퇴근인데 왜 대표님이 날?",
+            description: "팀 분위기가 한결 밝아졌다. 이대로 끝까지 가보자! 그런데 퇴근 직전, 대표님이 부르신다. \"듬이 씨, 이번 프로젝트의 목표는?\"",
             character: "char8.png"
         }
     ];
@@ -1536,7 +1552,7 @@ function updateScenario() {
     if (currentScenario <= scenarios.length) {
         const scenario = scenarios[currentScenario - 1];
         document.querySelector('.scenario-title').textContent = scenario.title;
-        document.querySelector('.scenario-description').innerHTML = scenario.description;
+        document.querySelector('.scenario-description').textContent = scenario.description;
         
         // 캐릭터 이미지 업데이트
         if (scenario.character) {
@@ -1561,24 +1577,24 @@ function updateScenario() {
 function updateChoices() {
     const choiceSets = [
         [
-            "직접 밀크T를 써보며 불편한 점을 찾아보자.",
-            "데이터로 어떤 단계에서 이탈이 생겼는지 확인하자."
+            "최근 제품을 직접 써보면서 어디서 불편함이 느껴지는지 감을 잡아보자!",
+            "데이터를 먼저 확인해서 어떤 단계에서 이탈이 발생했는지 분석해보자!"
         ],
         [
-            "일단 빨리 내서 시장 반응을 먼저 보자.",
-            "충분히 테스트해서 완성도를 높이자."
+            "시장을 빠르게 점유하는 것이 중요해! 완벽하지 않더라도 경쟁사보다 빠르게 출시해보자.",
+            "출시만 서두르다 우리 브랜드 이미지가 떨어질 수도 있어. 충분한 테스트 후에 퀄리티 있는 상품으로 출시하는 것이 맞지."
         ],
         [
-            "\"일정 안에서 가능한 대안을 먼저 정리해봅시다.\"",
-            "\"서로 입장에서 한 번 더 생각해보고 조율해봐요.\""
+            "일정 내 가능한 대안부터 우선순위화해서 정리해봅시다.",
+            "한 팀인만큼 서로의 입장에서 한번 더 생각해보고 의견차이를 좁혀봅시다."
         ],
         [
-            "\"지금이 승부처야. 일정 조정 없이 목표에 집중하자.\"",
-            "\"일정은 내가 정리할게. 우린 흐트러지지 않게 차근히 가자.\""
+            "목표를 80% 달성으로 조정하고 업무를 재배분합시다.",
+            "속도보단 완성도를 봅시다. 제가 일정 정리 도와드릴게요."
         ],
         [
-            "\"새로운 학습자 수를 10% 이상 늘리는 겁니다!\"",
-            "\"학생 만족도를 80% 이상으로 올리는 게 목표입니다!\""
+            "신규 유입유저가 10%를 넘을 수 있도록 하겠습니다!",
+            "사용자 만족도가 80%를 넘을 수 있도록 하겠습니다!"
         ]
     ];
     
@@ -1611,16 +1627,12 @@ function updateTime() {
 
 // 진행 상황 업데이트
 function updateProgress() {
-    const segments = document.querySelectorAll('.progress-segment');
-    
-    // 세그먼트 상태 업데이트
-    segments.forEach((segment, index) => {
-        segment.classList.remove('completed', 'current');
-        
-        if (index < currentScenario - 1) {
-            segment.classList.add('completed');
-        } else if (index === currentScenario - 1) {
-            segment.classList.add('current');
+    const stars = document.querySelectorAll('.star');
+    stars.forEach((star, index) => {
+        if (index < currentScenario) {
+            star.classList.add('filled');
+        } else {
+            star.classList.remove('filled');
         }
     });
 }
