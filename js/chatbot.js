@@ -1,7 +1,7 @@
 // OpenAI API 설정
 let OPENAI_API_KEY = null; // .env 파일에서 로드됨
 const OPENAI_API_URL = 'https://api.openai.com/v1/chat/completions';
-
+//테스트
 // DOM 요소들
 let currentScenario = 1;
 let userChoices = [];
