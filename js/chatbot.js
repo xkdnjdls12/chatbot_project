@@ -141,15 +141,15 @@ function backToInitialChoices() {
 
 // 다음으로 진행
 function proceedToNext() {
-    // "다음으로" 버튼 클릭 시 공백으로 처리
+    // "다음으로" 버튼 클릭 시 null로 처리
     userReasons.push({
         scenario: currentScenario,
         choice: userChoices[userChoices.length - 1].text,
-        reason: '', // 공백 처리
+        reason: null, // null 처리
         timestamp: new Date().toISOString()
     });
     
-    console.log('다음으로 버튼 클릭 - 공백 처리됨');
+    console.log('다음으로 버튼 클릭 - null 처리됨');
     
     // 로컬 스토리지에 사용자 데이터 저장
     const userData = {
@@ -158,7 +158,7 @@ function proceedToNext() {
         timestamp: new Date().toISOString()
     };
     localStorage.setItem('userTestData', JSON.stringify(userData));
-    console.log('💾 사용자 데이터 저장 완료 (공백 포함):', userData);
+    console.log('💾 사용자 데이터 저장 완료 (null 포함):', userData);
     
     // 다음 시나리오로 진행
     currentScenario++;
@@ -1086,23 +1086,22 @@ async function submitUserReason() {
     try {
         // 1️⃣ 예외처리 단계 (최우선)
         
-        // EMPTY CHECK
-    if (!reason) {
-            showValidationError("답변이 입력되지 않았습니다. 다시 작성해주세요.");
+        // EMPTY CHECK - 빈 값도 허용하고 null로 처리
+        const finalReason = reason || null;
+    
+        // PROFANITY CHECK - 값이 있을 때만 체크
+        if (reason && containsInappropriateLanguage(reason)) {
+            showValidationError("부적절한 표현이 섞여있습니다. 다시 작성해주세요.");
         return;
     }
     
-        // PROFANITY CHECK
-        if (containsInappropriateLanguage(reason)) {
-            showValidationError("부적절한 표현이 섞여있습니다. 다시 작성해주세요.");
-            return;
-        }
-        
-        // LENGTH CHECK
-        const lengthWithoutSpaces = reason.replace(/\s/g, '').length;
-        if (lengthWithoutSpaces < 5 || lengthWithoutSpaces > 50) {
-            showValidationError("답변의 길이가 부적절합니다. (5~50자)");
-            return;
+        // LENGTH CHECK - 값이 있을 때만 체크
+        if (reason) {
+            const lengthWithoutSpaces = reason.replace(/\s/g, '').length;
+            if (lengthWithoutSpaces < 5 || lengthWithoutSpaces > 50) {
+                showValidationError("답변의 길이가 부적절합니다. (5~50자)");
+                return;
+            }
         }
         
         // 선택한 옵션과 문항 ID 가져오기
@@ -1122,14 +1121,17 @@ async function submitUserReason() {
         
         console.log('🔍 선택지 변환:', { rawChoice, selectedOption, questionId });
         
-        console.log('🔍 통합 분석 시작:', { reason, selectedOption, questionId });
+        console.log('🔍 통합 분석 시작:', { reason: finalReason, selectedOption, questionId });
         
-        // 로컬 점수 계산 먼저 수행 (이제 async 함수)
-        const scoringResult = await calculateMeaningfulnessScore(reason, currentScenario, selectedOption);
+        // 로컬 점수 계산 먼저 수행 (이제 async 함수) - null 값일 때는 점수 계산 건너뛰기
+        let scoringResult = { decision: 'accept', score: 0 };
+        if (finalReason) {
+            scoringResult = await calculateMeaningfulnessScore(finalReason, currentScenario, selectedOption);
+        }
         console.log('📊 로컬 점수 계산 결과:', scoringResult);
         
-        // 점수가 5.8 미만이면 거부
-        if (scoringResult.decision === 'reject') {
+        // 점수가 5.8 미만이면 거부 (null 값이 아닐 때만 체크)
+        if (finalReason && scoringResult.decision === 'reject') {
             showValidationError("답변이 다소 모호하거나 선택지 의미와의 연결이 약합니다. 좀 더 구체적으로 작성해주세요.");
             return;
         }
@@ -1155,7 +1157,7 @@ async function submitUserReason() {
         userReasons.push({
             scenario: currentScenario,
             choice: selectedChoice.text,
-            reason: reason,
+            reason: finalReason,
             feedback: parsedResult.feedback,
             mapping: parsedResult.mapping,
             scoringResult: scoringResult, // 전체 채점 결과 저장
