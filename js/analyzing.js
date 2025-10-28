@@ -126,6 +126,7 @@ async function performAnalysis() {
         // 결과 페이지로 전환
         setTimeout(() => {
             window.location.href = 'result.html';
+            // console.log('결과 페이지로 전환');
         }, 1000);
         
     } catch (error) {
@@ -133,6 +134,7 @@ async function performAnalysis() {
         // 오류 발생 시에도 결과 페이지로 전환
         setTimeout(() => {
             window.location.href = 'result.html';
+            // console.log('결과 페이지로 전환');
         }, 2000);
     }
 }
@@ -142,7 +144,7 @@ async function callNewLLMAnalysis(choices, reasons) {
     console.log('🔑 API 키 로드 중...');
     
     // .env 파일에서 API 키 로드
-    const envData = await loadEnvFile();
+    const envData = await fetch('../env.json').then(response => response.json());
     const OPENAI_API_KEY = envData.OPENAI_API;
     const OPENAI_API_URL = 'https://api.openai.com/v1/chat/completions';
     
@@ -279,7 +281,7 @@ async function callNoReasonsAnalysis(choices) {
     console.log('🔑 API 키 로드 중...');
     
     // .env 파일에서 API 키 로드
-    const envData = await loadEnvFile();
+    const envData = await fetch('../env.json').then(response => response.json());
     const OPENAI_API_KEY = envData.OPENAI_API;
     const OPENAI_API_URL = 'https://api.openai.com/v1/chat/completions';
     
@@ -466,28 +468,28 @@ function analyzeChoicePattern(choices) {
         
         // 각 시나리오별 A/B 패턴 매핑
         // 시나리오 1: 문제해결 방식
-        if (text.includes('직접 써보면서') || text.includes('감을 잡아보자')) return 'A'; // 직관형
-        if (text.includes('데이터를 먼저') || text.includes('분석해보자')) return 'B'; // 논리형
+        if (text.includes('직접 밀크T를') || text.includes('점을 찾아보자.')) return 'A'; // 직관형
+        if (text.includes('데이터로 어떤') || text.includes('생겼는지 확인하자.')) return 'B'; // 논리형
         
         // 실제 선택지 텍스트 매칭 (chatbot.html 기반)
-        if (text.includes('최근 제품을 직접 써보면서 어디서 불편함이 느껴지는지 감을 잡아보자')) return 'A';
-        if (text.includes('데이터를 먼저 확인해서 어떤 단계에서 이탈이 발생했는지 분석해보자')) return 'B';
+        if (text.includes('직접 밀크T를 써보며 불편한 점을 찾아보자.')) return 'A';
+        if (text.includes('데이터로 어떤 단계에서 이탈이 생겼는지 확인하자.')) return 'B';
         
         // 시나리오 2: 실행스타일
-        if (text.includes('빠르게 점유') || text.includes('빠르게 출시')) return 'A'; // 빠른 실행
-        if (text.includes('브랜드 이미지') || text.includes('충분한 테스트')) return 'B'; // 리스크 관리
+        if (text.includes('일단 빨리 내서') || text.includes('먼저 보자.')) return 'A'; // 빠른 실행
+        if (text.includes('충분히 테스트해서') || text.includes('완성도를 높이자.')) return 'B'; // 리스크 관리
         
         // 시나리오 3: 커뮤니케이션
-        if (text.includes('우선순위화') || text.includes('정리해봅시다')) return 'A'; // 직설형
-        if (text.includes('서로의 입장') || text.includes('의견차이를 좁혀')) return 'B'; // 조율형
+        if (text.includes('일정 안에서') || text.includes('정리해봅시다.')) return 'A'; // 직설형
+        if (text.includes('서로 입장에서') || text.includes('조율해봐요.')) return 'B'; // 조율형
         
         // 시나리오 4: 리더십
-        if (text.includes('80% 달성') || text.includes('업무를 재배분')) return 'A'; // 드라이브형
-        if (text.includes('완성도를 봅시다') || text.includes('일정 정리 도와드릴게요')) return 'B'; // 서포트형
+        if (text.includes('목표를 조금') || text.includes('나눠봅시다.')) return 'A'; // 드라이브형
+        if (text.includes('완성도를 먼저') || text.includes('제가 같이 조정할게요.')) return 'B'; // 서포트형
         
         // 시나리오 5: 전략적사고
-        if (text.includes('신규 유입유저') || text.includes('10%를 넘을')) return 'A'; // 성과중심형
-        if (text.includes('사용자 만족도') || text.includes('80%를 넘을')) return 'B'; // 가치중심형
+        if (text.includes('새로운 학습자 수를') || text.includes('늘리는 겁니다!')) return 'A'; // 성과중심형
+        if (text.includes('학생 만족도를') || text.includes('게 목표입니다!')) return 'B'; // 가치중심형
         
         // 매칭되지 않은 경우 더 정확한 패턴 매칭 시도
         console.warn(`⚠️ 매칭되지 않은 선택지: ${text}`);
@@ -522,7 +524,7 @@ function analyzeChoicePattern(choices) {
     // 패턴에 따른 PM 유형 매핑
     const pmType = getPMTypeByPattern(pattern);
     console.log('✅ 매칭된 PM 유형:', pmType);
-    
+
     return pmType;
 }
 
