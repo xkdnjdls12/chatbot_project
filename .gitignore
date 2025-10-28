@@ -1,4 +1,4 @@
-<<<<<<< Updated upstream
+
 # 가상환경 폴더
 dm/
 
@@ -11,7 +11,7 @@ __pycache__/
 
 # 운영체제가 생성하는 파일
 Thumbs.db  # Windows에서 생성됨
-=======
+
 # 환경변수 파일
 .env
 .env.local
@@ -47,4 +47,4 @@ Thumbs.db
 dist/
 build/
 
->>>>>>> Stashed changes
+env.json

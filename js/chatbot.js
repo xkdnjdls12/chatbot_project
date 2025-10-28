@@ -17,8 +17,9 @@ document.addEventListener('DOMContentLoaded', async function() {
 // API 키 로드
 async function loadAPIKey() {
     try {
-        const envVars = await window.loadEnvFile();
-        OPENAI_API_KEY = envVars.OPENAI_API;
+        const envVars = await fetch('../env.json').then(response => response.json());
+        console.log(envVars);
+        OPENAI_API_KEY = envVars.OPEN_AI_KEY;
         
         if (OPENAI_API_KEY) {
             console.log('API 키 로드 성공:', OPENAI_API_KEY.substring(0, 10) + '...');
