@@ -10,8 +10,25 @@ async function captureAndSaveResult() {
             await loadHtml2Canvas();
         }
         
-        // 캡처할 영역 선택 (전체 결과 화면)
-        const captureArea = document.querySelector('.result-container') || document.body;
+        // 타입요약 이후의 요소들을 임시로 숨기기
+        const elementsToHide = [
+            '.save-button-section',
+            '.analysis-section', 
+            '.compatibility-section',
+            '.action-buttons'
+        ];
+        
+        const hiddenElements = [];
+        elementsToHide.forEach(selector => {
+            const elements = document.querySelectorAll(selector);
+            elements.forEach(element => {
+                element.style.display = 'none';
+                hiddenElements.push(element);
+            });
+        });
+        
+        // 캡처할 영역 선택 (타입요약까지만)
+        const captureArea = document.querySelector('.result-card');
         
         // html2canvas 옵션 설정
         const options = {
@@ -31,6 +48,11 @@ async function captureAndSaveResult() {
         const canvas = await html2canvas(captureArea, options);
         console.log('✅ 캡처 완료, 캔버스 크기:', canvas.width, 'x', canvas.height);
         
+        // 숨긴 요소들을 다시 보이게 하기
+        hiddenElements.forEach(element => {
+            element.style.display = '';
+        });
+        
         // PNG로 변환
         const dataURL = canvas.toDataURL('image/png', 1.0);
         
@@ -45,11 +67,45 @@ async function captureAndSaveResult() {
         downloadImage(dataURL, filename);
         
         // 성공 메시지
-        showSuccessMessage('결과가 성공적으로 저장되었습니다!');
+        showSuccessMessage('이미지가 성공적으로 저장되었습니다!');
         
     } catch (error) {
         console.error('❌ 화면 캡처 실패:', error);
         showErrorMessage('화면 저장 중 오류가 발생했습니다. 다시 시도해주세요.');
+    }
+}
+
+// 현재 페이지 링크 복사
+async function copyPageLink() {
+    try {
+        const currentUrl = window.location.href;
+        
+        // 클립보드 API 사용
+        if (navigator.clipboard && window.isSecureContext) {
+            await navigator.clipboard.writeText(currentUrl);
+            console.log('✅ 링크가 클립보드에 복사되었습니다:', currentUrl);
+        } else {
+            // 폴백: 텍스트 영역 사용
+            const textArea = document.createElement('textarea');
+            textArea.value = currentUrl;
+            textArea.style.position = 'fixed';
+            textArea.style.left = '-999999px';
+            textArea.style.top = '-999999px';
+            document.body.appendChild(textArea);
+            textArea.focus();
+            textArea.select();
+            
+            try {
+                document.execCommand('copy');
+                console.log('✅ 링크가 클립보드에 복사되었습니다 (폴백):', currentUrl);
+            } catch (err) {
+                console.error('❌ 링크 복사 실패:', err);
+            }
+            
+            document.body.removeChild(textArea);
+        }
+    } catch (error) {
+        console.error('❌ 링크 복사 중 오류:', error);
     }
 }
 
@@ -205,8 +261,156 @@ document.addEventListener('DOMContentLoaded', function() {
 
 // 저장하고 공유하기 버튼
 function saveAndShare() {
-    // 화면 캡처 및 저장 실행
+    // 먼저 이미지 저장
     captureAndSaveResult();
+    
+    // 그 다음 공유 팝업 표시
+    setTimeout(() => {
+        showSharePopup();
+    }, 1000); // 이미지 저장 완료 후 팝업 표시
+}
+
+// 테스트 다시하기
+function retakeTest() {
+    // 로컬 스토리지 초기화
+    localStorage.removeItem('userChoices');
+    localStorage.removeItem('userReasons');
+    localStorage.removeItem('userTestData');
+    localStorage.removeItem('analysisResult');
+    localStorage.removeItem('feedbackType');
+    
+    // 인트로 페이지로 이동
+    window.location.href = 'intro.html';
+}
+
+// 공유 팝업 표시
+function showSharePopup() {
+    const popup = document.getElementById('sharePopup');
+    const characterImage = document.getElementById('shareCharacterImage');
+    const shareTitle = document.getElementById('shareTitle');
+    const shareUrl = document.getElementById('shareUrl');
+    
+    // 현재 캐릭터 이미지와 PM 유형 정보 업데이트
+    const currentCharacter = document.querySelector('.result-character');
+    const currentPMType = document.querySelector('.pm-type');
+    
+    if (currentCharacter) {
+        characterImage.src = currentCharacter.src;
+    }
+    
+    if (currentPMType) {
+        shareTitle.textContent = `나만의 PM 유형은 ${currentPMType.textContent}!`;
+    }
+    
+    // 현재 URL 설정
+    shareUrl.textContent = window.location.href;
+    
+    // 팝업 표시
+    popup.style.display = 'flex';
+    document.body.style.overflow = 'hidden'; // 스크롤 방지
+    
+    // 팝업 외부 클릭 시 닫기
+    popup.onclick = function(e) {
+        if (e.target === popup) {
+            closeSharePopup();
+        }
+    };
+}
+
+// 공유 팝업 닫기
+function closeSharePopup() {
+    const popup = document.getElementById('sharePopup');
+    popup.style.display = 'none';
+    document.body.style.overflow = ''; // 스크롤 복원
+}
+
+// 링크 복사
+async function copyShareUrl() {
+    try {
+        const url = window.location.href;
+        
+        if (navigator.clipboard && window.isSecureContext) {
+            await navigator.clipboard.writeText(url);
+            showSuccessMessage('링크가 복사되었습니다!');
+        } else {
+            // 폴백: 텍스트 영역 사용
+            const textArea = document.createElement('textarea');
+            textArea.value = url;
+            textArea.style.position = 'fixed';
+            textArea.style.left = '-999999px';
+            textArea.style.top = '-999999px';
+            document.body.appendChild(textArea);
+            textArea.focus();
+            textArea.select();
+            
+            try {
+                document.execCommand('copy');
+                showSuccessMessage('링크가 복사되었습니다!');
+            } catch (err) {
+                showErrorMessage('링크 복사에 실패했습니다.');
+            }
+            
+            document.body.removeChild(textArea);
+        }
+    } catch (error) {
+        console.error('링크 복사 중 오류:', error);
+        showErrorMessage('링크 복사에 실패했습니다.');
+    }
+}
+
+// 카카오톡 공유
+function shareToKakao() {
+    const url = window.location.href;
+    const title = document.getElementById('shareTitle').textContent;
+    
+    // 카카오톡 공유 URL 생성
+    const kakaoUrl = `https://story.kakao.com/share?url=${encodeURIComponent(url)}&text=${encodeURIComponent(title)}`;
+    window.open(kakaoUrl, '_blank');
+    closeSharePopup();
+}
+
+// Facebook 공유
+function shareToFacebook() {
+    const url = window.location.href;
+    const facebookUrl = `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(url)}`;
+    window.open(facebookUrl, '_blank');
+    closeSharePopup();
+}
+
+// Twitter 공유
+function shareToTwitter() {
+    const url = window.location.href;
+    const title = document.getElementById('shareTitle').textContent;
+    const twitterUrl = `https://twitter.com/intent/tweet?url=${encodeURIComponent(url)}&text=${encodeURIComponent(title)}`;
+    window.open(twitterUrl, '_blank');
+    closeSharePopup();
+}
+
+// Instagram 공유 (링크 복사)
+function shareToInstagram() {
+    copyShareUrl();
+    showSuccessMessage('링크가 복사되었습니다! Instagram 스토리에 붙여넣기 하세요.');
+    closeSharePopup();
+}
+
+// 네이버 공유
+function shareToNaver() {
+    const url = window.location.href;
+    const title = document.getElementById('shareTitle').textContent;
+    const naverUrl = `https://share.naver.com/web/shareView?url=${encodeURIComponent(url)}&title=${encodeURIComponent(title)}`;
+    window.open(naverUrl, '_blank');
+    closeSharePopup();
+}
+
+// 이메일 공유
+function shareToEmail() {
+    const url = window.location.href;
+    const title = document.getElementById('shareTitle').textContent;
+    const subject = encodeURIComponent(title);
+    const body = encodeURIComponent(`${title}\n\n${url}`);
+    const emailUrl = `mailto:?subject=${subject}&body=${body}`;
+    window.location.href = emailUrl;
+    closeSharePopup();
 }
 
 // 홈페이지 구경가기 버튼
@@ -410,12 +614,19 @@ function showWithReasonsSections(result) {
         }
     }
     
-    // 강점 섹션 표시
+    // 강점 섹션 표시 (제목 유지: "나만의 강점")
     const strengthsBox = document.querySelector('.analysis-box.strengths');
     if (strengthsBox) {
         strengthsBox.style.display = 'block';
+        const strengthsTitle = strengthsBox.querySelector('h4');
         const strengthsText = strengthsBox.querySelector('p');
-        const strengthsTitle = strengthsBox.querySelector('h3');
+
+        // 제목 유지 (이유 작성된 경우)
+        if (strengthsTitle) {
+            strengthsTitle.textContent = '나만의 강점';
+            console.log('💪 강점 제목 유지: "나만의 강점"');
+        }
+
         
         if (strengthsText) {
             const strengthsContent = result.strengths || '강점 정보를 불러올 수 없습니다.';
@@ -429,12 +640,20 @@ function showWithReasonsSections(result) {
         }
     }
     
-    // 보완점 섹션 표시
+    // 보완점 섹션 표시 (제목 유지: "내가 보완할 부분")
     const improvementsBox = document.querySelector('.analysis-box.improvements');
     if (improvementsBox) {
         improvementsBox.style.display = 'block';
+        const improvementsTitle = improvementsBox.querySelector('h4');
         const improvementsText = improvementsBox.querySelector('p');
-        const improvementsTitle = improvementsBox.querySelector('h3');
+
+        
+        // 제목 유지 (이유 작성된 경우)
+        if (improvementsTitle) {
+            improvementsTitle.textContent = '내가 보완할 부분';
+            console.log('🔧 보완점 제목 유지: "내가 보완할 부분"');
+        }
+
         
         if (improvementsText) {
             const improvementsContent = result.improvements || '보완점 정보를 불러올 수 없습니다.';
@@ -459,12 +678,19 @@ function showWithoutReasonsSections(result) {
         aiAnalysisBox.style.display = 'none';
     }
     
-    // 강점 섹션 표시
+    // 강점 섹션 표시 (제목 변경: "나만의 강점" → "강점")
     const strengthsBox = document.querySelector('.analysis-box.strengths');
     if (strengthsBox) {
         strengthsBox.style.display = 'block';
+        const strengthsTitle = strengthsBox.querySelector('h4');
         const strengthsText = strengthsBox.querySelector('p');
-        const strengthsTitle = strengthsBox.querySelector('h3');
+
+        // 제목 변경
+        if (strengthsTitle) {
+            strengthsTitle.textContent = '강점';
+            console.log('💪 강점 제목 변경: "나만의 강점" → "강점"');
+        }
+
         
         if (strengthsText) {
             console.log('💪 강점 텍스트 설정:', result.strengths);
@@ -477,12 +703,20 @@ function showWithoutReasonsSections(result) {
         }
     }
     
-    // 보완점 섹션 표시
+    // 보완점 섹션 표시 (제목 변경: "내가 보완할 부분" → "보완할 부분")
     const improvementsBox = document.querySelector('.analysis-box.improvements');
     if (improvementsBox) {
         improvementsBox.style.display = 'block';
+        const improvementsTitle = improvementsBox.querySelector('h4');
         const improvementsText = improvementsBox.querySelector('p');
-        const improvementsTitle = improvementsBox.querySelector('h3');
+
+        
+        // 제목 변경
+        if (improvementsTitle) {
+            improvementsTitle.textContent = '보완할 부분';
+            console.log('🔧 보완점 제목 변경: "내가 보완할 부분" → "보완할 부분"');
+        }
+
         
         if (improvementsText) {
             console.log('🔧 보완점 텍스트 설정:', result.improvements);

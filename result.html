@@ -55,10 +55,10 @@
                 <p class="type-description">모든 일엔 기준과 프로세스가 있어야 한다고 믿는 PM계의 냉철한 현실주의자.</p>
             </div>
             
-            <!-- 액션 버튼들 -->
-            <div class="action-buttons">
-                <button class="action-btn primary" onclick="saveAndShare()">저장하고 공유하기</button>
-                <button class="action-btn secondary" onclick="goHomepage()">홈페이지 구경가기</button>
+            <!-- 저장하고 공유하기 버튼 -->
+            <div class="save-button-section">
+                <button class="action-btn primary" onclick="saveAndShare()">내 유형 저장하고 공유하기</button>
+                <button class="retry-btn" onclick="retakeTest()" title="테스트 다시하기">↻</button>
             </div>
             
             <!-- 상세 분석 -->
@@ -100,6 +100,75 @@
                     </div>
                     <h5 class="incompatible-name">멈춰! 형</h5>
                     <p class="incompatible-reason">서로의 주도권이 부딪할 수 있어요!</p>
+                </div>
+            </div>
+            
+            <!-- 액션 버튼들 -->
+            <div class="action-buttons">
+                <p class="bootcamp-description" id="bootcampDescription">진짜 성장하고 싶다면… 아래 버튼 클릭하기👇</p>
+                <button class="action-btn secondary" onclick="goHomepage()">천재PM부트 홈페이지 구경가기</button>
+            </div>
+        </div>
+    </div>
+    
+    <!-- 공유 팝업 -->
+    <div class="share-popup" id="sharePopup">
+        <div class="share-popup-content">
+            <!-- 팝업 헤더 -->
+            <div class="share-popup-header">
+                <div class="share-header-left">
+                    <span class="share-icon">🔗</span>
+                    <span class="share-title">링크 공유</span>
+                </div>
+                <div class="share-header-right">
+                    <button class="share-close-btn" onclick="closeSharePopup()">×</button>
+                </div>
+            </div>
+            
+            <!-- 공유할 콘텐츠 -->
+            <div class="share-content">
+                <div class="share-thumbnail">
+                    <img id="shareCharacterImage" src="images/avatars/char4.png" alt="PM 듬이">
+                </div>
+                <div class="share-info">
+                    <h3 id="shareTitle">나만의 PM 유형은?</h3>
+                    <div class="share-url">
+                        <span id="shareUrl">https://example.com/result</span>
+                        <div class="share-url-actions">
+                            <button class="url-action-btn" onclick="copyShareUrl()" title="링크 복사">📋</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- 공유 방법 -->
+            <div class="share-methods">
+                <h4>공유 방법</h4>
+                <div class="share-grid">
+                    <button class="share-method-btn" onclick="shareToKakao()">
+                        <div class="share-method-icon">💬</div>
+                        <span>카카오톡</span>
+                    </button>
+                    <button class="share-method-btn" onclick="shareToFacebook()">
+                        <div class="share-method-icon">📘</div>
+                        <span>Facebook</span>
+                    </button>
+                    <button class="share-method-btn" onclick="shareToTwitter()">
+                        <div class="share-method-icon">🐦</div>
+                        <span>Twitter</span>
+                    </button>
+                    <button class="share-method-btn" onclick="shareToInstagram()">
+                        <div class="share-method-icon">📷</div>
+                        <span>Instagram</span>
+                    </button>
+                    <button class="share-method-btn" onclick="shareToNaver()">
+                        <div class="share-method-icon">📝</div>
+                        <span>네이버</span>
+                    </button>
+                    <button class="share-method-btn" onclick="shareToEmail()">
+                        <div class="share-method-icon">📧</div>
+                        <span>이메일</span>
+                    </button>
                 </div>
             </div>
         </div>

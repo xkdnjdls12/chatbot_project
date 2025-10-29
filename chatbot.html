@@ -12,12 +12,14 @@
         <div class="app-card chatbot-card">
             <!-- 진행 상황 표시 -->
             <div class="progress-section">
-                <div class="stars">
-                    <span class="star filled">★</span>
-                    <span class="star">★</span>
-                    <span class="star">★</span>
-                    <span class="star">★</span>
-                    <span class="star">★</span>
+                <div class="progress-container">
+                    <div class="progress-bar">
+                        <div class="progress-segment" data-step="1">1</div>
+                        <div class="progress-segment" data-step="2">2</div>
+                        <div class="progress-segment" data-step="3">3</div>
+                        <div class="progress-segment" data-step="4">4</div>
+                        <div class="progress-segment" data-step="5">5</div>
+                    </div>
                 </div>
                 <div class="time">09:00 AM</div>
             </div>
@@ -58,7 +60,7 @@
                     </div>
                     <div class="button-row">
                         <button class="back-btn" id="backToActions">← 돌아가기</button>
-                        <button class="submit-btn" id="submitReason">입력완료→</button>
+                        <button class="submit-btn" id="submitReason">다음으로→</button>
                     </div>
                 </div>
             </div>
@@ -71,7 +73,7 @@
         </div>
     </div>
     
-    <script src="js/load-env.js"></script>
+    <!-- <script src="js/load-env.js"></script> -->
     <script src="js/chatbot.js"></script>
 </body>
 </html>

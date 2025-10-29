@@ -3,27 +3,58 @@
 /* 진행 상황 표시 */
 .progress-section {
     text-align: center;
-    margin-bottom: 25px;
+    margin-bottom: 2
+    5px;
 }
 
-.stars {
+.progress-container {
+    display: flex;
+    align-items: center;
+    justify-content: center;
     margin-bottom: 10px;
 }
 
-.star {
-    font-size: 20px;
-    margin: 0 3px;
-    color: #ddd;
-    transition: color 0.3s ease;
+.progress-bar {
+    display: flex;
+    background: #f0f0f0;
+    border-radius: 12px;
+    height: 24px;
+    width: 200px;
+    overflow: hidden;
+    border: 1px solid #e0e0e0;
 }
 
-.star.filled {
-    color: #FFD700;
+.progress-segment {
+    flex: 1;
+    background: #f0f0f0;
+    border-right: 1px solid white;
+    transition: background-color 0.3s ease;
+    position: relative;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 14px;
+    font-weight: bold;
+    color: #666;
+}
+
+.progress-segment:last-child {
+    border-right: none;
+}
+
+.progress-segment.completed {
+    background: #4A90E2;
+    color: white;
+}
+
+.progress-segment.current {
+    background: #87CEEB;
+    color: white;
 }
 
 .time {
     color: #4A90E2;
-    font-size: 18px;
+    font-size: 22px;
     font-weight: bold;
     font-family: 'Galmuri9', 'Courier New', monospace;
 }
@@ -35,7 +66,7 @@
 
 .scenario-title {
     color: #333;
-    font-size: 18px;
+    font-size: 22px;
     font-weight: bold;
     margin-bottom: 15px;
     text-align: center;

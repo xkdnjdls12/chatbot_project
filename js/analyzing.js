@@ -62,7 +62,23 @@ async function performAnalysis() {
         
         // 32가지 유형 매핑 (이유 작성 여부와 관계없이 항상 수행)
         console.log('🔍 32가지 유형 매핑 시작...');
-        const pmTypeResult = getFixedFeedback(userData.choices);
+        
+        // choices 데이터 확인 및 정리
+        let choicesData = userData.choices || [];
+        console.log('📊 원본 choices 데이터:', choicesData);
+        console.log('📊 choices 데이터 길이:', choicesData.length);
+        
+        // choices가 없거나 비어있는 경우 경고
+        if (!choicesData || choicesData.length === 0) {
+            console.error('❌ choices 데이터가 없습니다!');
+            console.log('📊 전체 userData:', userData);
+            // 기본값으로 빈 배열 사용
+            choicesData = [];
+        }
+        
+        console.log('📊 최종 choices 데이터:', choicesData);
+        
+        const pmTypeResult = getFixedFeedback(choicesData);
         console.log('✅ 32가지 유형 매핑 완료:', pmTypeResult);
         
         if (hasReasons) {
@@ -110,6 +126,7 @@ async function performAnalysis() {
         // 결과 페이지로 전환
         setTimeout(() => {
             window.location.href = 'result.html';
+            // console.log('결과 페이지로 전환');
         }, 1000);
         
     } catch (error) {
@@ -117,6 +134,7 @@ async function performAnalysis() {
         // 오류 발생 시에도 결과 페이지로 전환
         setTimeout(() => {
             window.location.href = 'result.html';
+            // console.log('결과 페이지로 전환');
         }, 2000);
     }
 }
@@ -126,7 +144,7 @@ async function callNewLLMAnalysis(choices, reasons) {
     console.log('🔑 API 키 로드 중...');
     
     // .env 파일에서 API 키 로드
-    const envData = await loadEnvFile();
+    const envData = await fetch('../env.json').then(response => response.json());
     const OPENAI_API_KEY = envData.OPENAI_API;
     const OPENAI_API_URL = 'https://api.openai.com/v1/chat/completions';
     
@@ -263,7 +281,7 @@ async function callNoReasonsAnalysis(choices) {
     console.log('🔑 API 키 로드 중...');
     
     // .env 파일에서 API 키 로드
-    const envData = await loadEnvFile();
+    const envData = await fetch('../env.json').then(response => response.json());
     const OPENAI_API_KEY = envData.OPENAI_API;
     const OPENAI_API_URL = 'https://api.openai.com/v1/chat/completions';
     
@@ -396,6 +414,25 @@ user_reasons: []
 function getFixedFeedback(choices) {
     console.log('🔍 선택지 분석 중:', choices);
     
+    // 선택지가 없는 경우 기본 유형 반환
+    if (!choices || choices.length === 0) {
+        console.warn('⚠️ 선택지가 없습니다. 기본 유형을 반환합니다.');
+        return {
+            pmType: '알파메일 PM',
+            simpleIntro: '불필요한 감정소모는 NO!',
+            detailedIntro: '모든 일엔 기준과 프로세스가 있어야 한다고 믿는 PM계의 냉철한 현실주의자.',
+            strengths: '높은 추진력과 결단력을 기반으로 목표를 명확히 설정하고 신속하게 실행하는 성과 중심형 리더십을 보유.',
+            improvements: '성과 중심 사고로 인해 공감과 피드백 수용이 다소 부족할 수 있음.',
+            compatiblePM: '싹싹김치 형',
+            compatiblePMReason: '정리력과 커뮤니케이션이 리더십을 보완해줘요!',
+            compatiblePMImage: 'char5.png',
+            incompatiblePM: '멈춰! 형',
+            incompatiblePMReason: '서로의 주도권이 부딪할 수 있어요!',
+            incompatiblePMImage: 'char6.png',
+            image: 'char4.png'
+        };
+    }
+    
     // 선택지 패턴에 따른 고정 피드백 매칭
     const choicePattern = analyzeChoicePattern(choices);
     console.log('📊 분석된 패턴:', choicePattern);
@@ -431,27 +468,54 @@ function analyzeChoicePattern(choices) {
         
         // 각 시나리오별 A/B 패턴 매핑
         // 시나리오 1: 문제해결 방식
-        if (text.includes('직접 써보면서') || text.includes('감을 잡아보자')) return 'A'; // 직관형
-        if (text.includes('데이터를 먼저') || text.includes('분석해보자')) return 'B'; // 논리형
+        if (text.includes('직접 밀크T를') || text.includes('점을 찾아보자.')) return 'A'; // 직관형
+        if (text.includes('데이터로 어떤') || text.includes('생겼는지 확인하자.')) return 'B'; // 논리형
+        
+        // 실제 선택지 텍스트 매칭 (chatbot.html 기반)
+        if (text.includes('직접 밀크T를 써보며 불편한 점을 찾아보자.')) return 'A';
+        if (text.includes('데이터로 어떤 단계에서 이탈이 생겼는지 확인하자.')) return 'B';
         
         // 시나리오 2: 실행스타일
-        if (text.includes('빠르게 점유') || text.includes('빠르게 출시')) return 'A'; // 빠른 실행
-        if (text.includes('브랜드 이미지') || text.includes('충분한 테스트')) return 'B'; // 리스크 관리
+        if (text.includes('일단 빨리 내서') || text.includes('먼저 보자.')) return 'A'; // 빠른 실행
+        if (text.includes('충분히 테스트해서') || text.includes('완성도를 높이자.')) return 'B'; // 리스크 관리
         
         // 시나리오 3: 커뮤니케이션
-        if (text.includes('우선순위화') || text.includes('정리해봅시다')) return 'A'; // 직설형
-        if (text.includes('서로의 입장') || text.includes('의견차이를 좁혀')) return 'B'; // 조율형
+        if (text.includes('일정 안에서') || text.includes('정리해봅시다.')) return 'A'; // 직설형
+        if (text.includes('서로 입장에서') || text.includes('조율해봐요.')) return 'B'; // 조율형
         
         // 시나리오 4: 리더십
-        if (text.includes('80% 달성') || text.includes('업무를 재배분')) return 'A'; // 드라이브형
-        if (text.includes('완성도를 봅시다') || text.includes('일정 정리 도와드릴게요')) return 'B'; // 서포트형
+        if (text.includes('목표를 조금') || text.includes('나눠봅시다.')) return 'A'; // 드라이브형
+        if (text.includes('완성도를 먼저') || text.includes('제가 같이 조정할게요.')) return 'B'; // 서포트형
         
         // 시나리오 5: 전략적사고
-        if (text.includes('신규 유입유저') || text.includes('10%를 넘을')) return 'A'; // 성과중심형
-        if (text.includes('사용자 만족도') || text.includes('80%를 넘을')) return 'B'; // 가치중심형
+        if (text.includes('새로운 학습자 수를') || text.includes('늘리는 겁니다!')) return 'A'; // 성과중심형
+        if (text.includes('학생 만족도를') || text.includes('게 목표입니다!')) return 'B'; // 가치중심형
         
+        // 매칭되지 않은 경우 더 정확한 패턴 매칭 시도
         console.warn(`⚠️ 매칭되지 않은 선택지: ${text}`);
-        return 'A'; // 기본값
+        console.log(`📝 전체 텍스트: "${text}"`);
+        
+        // 키워드 기반 패턴 추정 (더 정확한 매칭)
+        const aKeywords = ['직접', '빠르게', '우선순위', '80%', '신규', '점유', '출시', '드라이브', '성과'];
+        const bKeywords = ['데이터', '브랜드', '서로', '완성도', '사용자', '만족도', '충분한', '테스트', '조율'];
+        
+        const aMatches = aKeywords.filter(keyword => text.includes(keyword)).length;
+        const bMatches = bKeywords.filter(keyword => text.includes(keyword)).length;
+        
+        console.log(`🔍 A 키워드 매칭: ${aMatches}, B 키워드 매칭: ${bMatches}`);
+        
+        if (aMatches > bMatches) {
+            console.log('🔍 A 패턴으로 추정');
+            return 'A';
+        } else if (bMatches > aMatches) {
+            console.log('🔍 B 패턴으로 추정');
+            return 'B';
+        }
+        
+        // 동일한 매칭 수인 경우 시나리오별 기본값
+        const scenarioDefault = index === 0 ? 'A' : (index % 2 === 0 ? 'A' : 'B');
+        console.log(`🎯 시나리오 ${index + 1} 기본값: ${scenarioDefault}`);
+        return scenarioDefault;
     }).join('');
     
     console.log('🔍 분석된 패턴:', pattern);
@@ -460,7 +524,7 @@ function analyzeChoicePattern(choices) {
     // 패턴에 따른 PM 유형 매핑
     const pmType = getPMTypeByPattern(pattern);
     console.log('✅ 매칭된 PM 유형:', pmType);
-    
+
     return pmType;
 }
 
@@ -472,8 +536,8 @@ function getPMTypeByPattern(pattern) {
         // AAAAA 패턴들
         'AAAAA': {
             pmType: '골반이 멈추지 않아~ 형',
-            simpleIntro: '창의성과 트렌드 감각을 갖춘 예술형 PM',
-            detailedIntro: '독창적 아이디어와 감각적 표현으로 프로젝트에 활기를 불어넣는 크리에이티브 리더. 하지만 집중력 유지에는 어려움이 있음.',
+            simpleIntro: '트렌드 타고 춤추는 인간 영감 뱅크',
+            detailedIntro: '트렌드 감각으로 무드메이킹. 새로움 하나면 팀의 색감이 확 살아난다.',
             strengths: '예술적 감각과 독창적인 아이디어로 새로운 흐름을 제시하며, 팀에 영감을 주는 창의적 리더십을 발휘합니다.',
             improvements: '몰입이 짧아 일관성이 떨어질 수 있으므로, 루틴화된 일정 관리로 집중력을 유지해야 합니다.',
             compatiblePM: '침착맨 형',
@@ -483,11 +547,11 @@ function getPMTypeByPattern(pattern) {
             incompatiblePMReason: '속도와 스타일의 차이가 크기 때문이에요!',
             incompatiblePMImage: 'dm_2.png',
             image: 'dm_32.png'
-        },
+            },
         'AAAAB': {
             pmType: '관짝 소년단 형',
-            simpleIntro: '유머와 회복탄력성을 가진 낙관형 PM',
-            detailedIntro: '힘든 상황에서도 웃음을 잃지 않고 팀의 긴장을 완화하는 분위기 메이커형 리더. 다만 계획성은 다소 부족할 수 있음.',
+            simpleIntro: '웃음으로 위기 탈출하는 팀 무드 리셋터',
+            detailedIntro: '힘든 국면에도 농담 한 스푼. 분위기 반전으로 팀 사기 리바운드.',
             strengths: '긍정적인 유머와 유연한 사고로 팀의 사기를 높이고, 위기 속에서도 즐거운 분위기를 만들어 협업을 촉진합니다.',
             improvements: '즉흥적인 태도가 장기 계획을 흔들 수 있으므로, 목표를 구체화하고 일정 관리에 신경 써야 합니다.',
             compatiblePM: '불속성 형',
@@ -497,11 +561,11 @@ function getPMTypeByPattern(pattern) {
             incompatiblePMReason: '진지한 접근이 답답하게 느껴질 수 있어요!',
             incompatiblePMImage: 'dm_23.png',
             image: 'dm_31.png'
-        },
+            },
         'AAABA': {
             pmType: '센스만점 형',
-            simpleIntro: '창의성과 순발력을 갖춘 감각형 PM',
-            detailedIntro: '즉각적인 반응력과 재치로 팀의 아이디어를 이끌지만, 장기 계획엔 약함.',
+            simpleIntro: '아이디어 스파크 장착한 인간 번뜩임',
+            detailedIntro: '아이디어가 스파크처럼 튄다. 빈 화이트보드도 10분이면 스케치가 꽉 찬다.',
             strengths: '뛰어난 직감과 유연한 사고로 창의적인 아이디어를 제시하며, 새로운 관점을 통해 프로젝트에 활력을 불어넣습니다.',
             improvements: '단기적인 성과에 집중하면 지속성이 떨어질 수 있으므로, 장기적 계획을 세워 균형을 잡는 노력이 필요합니다.',
             compatiblePM: '침착맨 형',
@@ -511,11 +575,11 @@ function getPMTypeByPattern(pattern) {
             incompatiblePMReason: '논리 중심형과 감각형이 충돌하기 때문이에요!',
             incompatiblePMImage: 'dm_7.png',
             image: 'dm_30.png'
-        },
+            },
         'AAABB': {
             pmType: '알쓸신잡 형',
-            simpleIntro: '깊은 지식과 분석력을 갖춘 정보형 PM',
-            detailedIntro: '다방면의 정보를 바탕으로 체계적인 계획을 세우지만, 실행 속도는 느림.',
+            simpleIntro: '지식으로 무장한 인간 위키백과',
+            detailedIntro: '위키 인간화 버전. 정보 수집과 맥락화로 로드맵에 살 붙이는 박사님.',
             strengths: '폭넓은 지식과 구조적 사고로 문제의 본질을 꿰뚫으며, 장기적 전략을 세우는 데 탁월한 역량을 보입니다.',
             improvements: '지식 중심 접근이 실행력을 저하시킬 수 있어, 실천 중심의 행동 리더십을 보완해야 합니다.',
             compatiblePM: '나는 아직 배고프다 형',
@@ -525,11 +589,11 @@ function getPMTypeByPattern(pattern) {
             incompatiblePMReason: '느긋한 흐름이 답답하게 느껴질 수 있어요!',
             incompatiblePMImage: 'dm_18.png',
             image: 'dm_29.png'
-        },
+            },
         'AABAA': {
             pmType: '넥 슬라이스 형',
-            simpleIntro: '직관과 통찰을 기반으로 빠른 판단을 내리는 전략형 PM',
-            detailedIntro: '분석력과 통찰력이 뛰어나 의사결정이 빠르지만, 감정적 유연성은 낮음.',
+            simpleIntro: '고민은 짧게, 판단은 빠르게',
+            detailedIntro: '핵심만 슥 베어내듯 판단. 통찰 한 스푼으로 회의 시간을 절반으로 만든다.',
             strengths: '날카로운 통찰과 빠른 판단으로 복잡한 문제를 단시간에 해결하며, 효율적인 전략 수립에 강점을 보입니다.',
             improvements: '논리 중심의 사고가 감정 교류를 약화시킬 수 있어, 관계 중심의 소통을 의식적으로 강화해야 합니다.',
             compatiblePM: '무한도전 형',
@@ -539,11 +603,11 @@ function getPMTypeByPattern(pattern) {
             incompatiblePMReason: '차가운 판단형과 정서 코드가 다르기 때문이에요!',
             incompatiblePMImage: 'dm_22.png',
             image: 'dm_28.png'
-        },
+},
         'AABAB': {
             pmType: '무한도전 형',
-            simpleIntro: '도전정신과 속도를 중시하는 실험형 PM',
-            detailedIntro: '새로운 시도에 적극적이며 피드백을 빠르게 반영하지만, 지속력은 약함.',
+            simpleIntro: '실패도 콘텐츠로 만드는 도전러',
+            detailedIntro: '‘해보고 말하자’가 기본값. 빠른 실험으로 인사이트를 뽑아내는 테스트 드리븐.',
             strengths: '도전정신과 추진력을 기반으로 빠르게 실행하며, 새로운 아이디어를 실험해 혁신을 만들어냅니다.',
             improvements: '실행 속도에 비해 완성도가 낮을 수 있으므로, 세밀한 관리와 지속력 향상에 힘써야 합니다.',
             compatiblePM: '넥슬라이스 형',
@@ -553,11 +617,11 @@ function getPMTypeByPattern(pattern) {
             incompatiblePMReason: '과도한 변화가 피로하게 느껴질 수 있어요!',
             incompatiblePMImage: 'dm_18.png',
             image: 'dm_27.png'
-        },
+            },
         'AABBA': {
             pmType: '0친자 형',
-            simpleIntro: '감정과 이성의 균형을 유지하는 안정형 PM',
-            detailedIntro: '논리와 공감을 적절히 조화시켜 균형 잡힌 리더십을 발휘하지만, 속도감은 떨어질 수 있음.',
+            simpleIntro: '감정·이성 밸런스 미친 인간 저울',
+            detailedIntro: '이성·감성 트윈코어 구동. 과열되면 식히고, 차가우면 덥히는 온도조절 장치.',
             strengths: '논리와 공감을 조화롭게 활용해 팀의 신뢰를 얻으며, 갈등 상황에서도 차분하게 균형을 유지합니다.',
             improvements: '신중함이 지나치면 결정이 늦어질 수 있으니, 때로는 과감한 실행력으로 속도를 내야 합니다.',
             compatiblePM: '이건 첫번째 레슨 형',
@@ -567,11 +631,11 @@ function getPMTypeByPattern(pattern) {
             incompatiblePMReason: '성급한 실행을 부담스러워하기 때문이에요!',
             incompatiblePMImage: 'dm_10.png',
             image: 'dm_26.png'
-        },
+            },
         'AABBB': {
             pmType: '할래말래? 형',
-            simpleIntro: '유연한 사고와 중재력을 갖춘 협상형 PM',
-            detailedIntro: '갈등 상황을 조율하는 능력이 뛰어나지만, 결단이 늦을 때가 있음.',
+            simpleIntro: '협상 테이블의 평화중재자',
+            detailedIntro: '의견 충돌? 일단 중간자 모드로 브레이크. 합의점 찾는 손놀림이 빠르다.',
             strengths: '다양한 관점을 수용하며 조화로운 협업을 이끌고, 유연한 사고로 팀 내 갈등을 자연스럽게 완화시킵니다.',
             improvements: '과도한 신중함이 기회를 놓치게 할 수 있어, 빠른 결단과 추진력을 키우는 노력이 필요합니다.',
             compatiblePM: '낋여오거라 형',
@@ -581,11 +645,11 @@ function getPMTypeByPattern(pattern) {
             incompatiblePMReason: '즉시 행동을 요구하는 스타일과 맞지 않아요!',
             incompatiblePMImage: 'dm_10.png',
             image: 'dm_25.png'
-        },
+            },
         'ABAAA': {
             pmType: '넘어갈게요 형',
-            simpleIntro: '온화함과 유연한 대처를 갖춘 조화형 PM',
-            detailedIntro: '부드러운 태도로 갈등을 완화하며 팀의 평화를 유지하지만, 주도성이 약함.',
+            simpleIntro: '싸움보다 평화를 택한 인간 버퍼링',
+            detailedIntro: '각을 세우기보다 각을 둥글게. 상황 따라 유연하게 결을 맞춘다.',
             strengths: '유연한 사고와 부드러운 소통으로 팀의 긴장을 완화시키며, 협업 속에서 안정감을 형성하는 능력이 있습니다.',
             improvements: '과도한 배려로 결단력이 약해질 수 있어, 명확한 기준과 책임감 있는 의사결정이 필요합니다.',
             compatiblePM: '개미는 뚠뚠 형',
@@ -595,11 +659,11 @@ function getPMTypeByPattern(pattern) {
             incompatiblePMReason: '감정 강도가 달라 피로해질 수 있어요!',
             incompatiblePMImage: 'dm_4.png',
             image: 'dm_24.png'
-        },
+            },
         'ABAAB': {
             pmType: '침착man~ 형',
-            simpleIntro: '냉정한 판단력과 위기 대응력이 강한 현실형 PM',
-            detailedIntro: '감정보다 사실을 우선하며 위기 상황에서 침착함을 유지함. 감정 교류는 약한 편임.',
+            simpleIntro: '불나도 침착, 인간 아이스팩',
+            detailedIntro: '알람 울려도 심박수 유지. 위기에도 표정 변화 없는 현실 모드 장착.',
             strengths: '혼란스러운 상황에서도 흔들리지 않는 냉정함으로 위기를 수습하고, 논리적인 판단으로 문제 해결을 주도합니다.',
             improvements: '감정 표현 부족이 팀의 몰입을 떨어뜨릴 수 있어, 따뜻한 피드백과 인정 표현을 의식적으로 늘려야 합니다.',
             compatiblePM: '골반이 멈추지 않아 형',
@@ -609,11 +673,11 @@ function getPMTypeByPattern(pattern) {
             incompatiblePMReason: '즉흥적 유머와 진지함이 맞지 않기 때문이에요!',
             incompatiblePMImage: 'dm_31.png',
             image: 'dm_23.png'
-        },
+            },
         'ABABA': {
             pmType: '낋여오거라~ 형',
-            simpleIntro: '따뜻한 공감과 감정 케어 중심의 감성형 PM',
-            detailedIntro: '팀원의 감정을 세심히 살피며, 부드럽고 포용력 있는 리더십을 보임. 다만 논리적 근거 제시는 부족할 수 있음.',
+            simpleIntro: '눈치로 분위기 미세조정하는 감정 온도조절기',
+            detailedIntro: '팀 컨디션 모니터링이 특기. 다독이고 다져서 분위기부터 안정화한다.',
             strengths: '팀원들의 감정을 섬세하게 읽고 배려하며, 따뜻한 공감으로 팀의 결속력과 안정감을 높이는 리더십을 보여줍니다.',
             improvements: '감정에 집중하다 보면 판단이 흐려질 수 있어, 논리와 데이터 기반 접근을 병행하는 훈련이 필요합니다.',
             compatiblePM: '럭키비키 형',
@@ -623,11 +687,11 @@ function getPMTypeByPattern(pattern) {
             incompatiblePMReason: '차가운 판단형과 정서 코드가 다르기 때문이에요!',
             incompatiblePMImage: 'dm_28.png',
             image: 'dm_22.png'
-        },
+            },
         'ABABB': {
             pmType: '너 T야? 형',
-            simpleIntro: '데이터와 효율 중심의 논리형 PM',
-            detailedIntro: '수치와 근거를 기반으로 합리적 결정을 내리지만, 감정 교류에는 서툼.',
+            simpleIntro: '감정보단 데이터, T본좌',
+            detailedIntro: '감이 아니라 수치로 말하는 타입. 근거가 쌓여야 고개가 끄덕여진다.',
             strengths: '객관적 데이터와 논리에 기반해 명확한 판단을 내리며, 효율적인 의사결정으로 프로젝트의 완성도를 높입니다.',
             improvements: '수치 중심의 접근이 인간적인 교류를 약화시킬 수 있으므로, 감정적 피드백과 공감을 병행해야 합니다.',
             compatiblePM: '낋여오거라 형',
@@ -637,11 +701,11 @@ function getPMTypeByPattern(pattern) {
             incompatiblePMReason: '감정 과잉형 텐션을 부담스러워하기 때문이에요!',
             incompatiblePMImage: 'dm_4.png',
             image: 'dm_21.png'
-        },
+            },
         'ABBAA': {
             pmType: '이건 첫번째 레슨~ 형',
-            simpleIntro: '논리와 원칙 중심의 분석형 PM',
-            detailedIntro: '체계적 사고로 문제를 정리하고 방향을 제시하지만, 감정적 유연성은 부족함.',
+            simpleIntro: '모든 문제에 프레임부터 세우는 구조 덕후',
+            detailedIntro: '프레임 먼저 깔고 얘기 시작. 구조화로 혼선을 싹 걷어내는 룰메이커.',
             strengths: '논리적 사고와 명확한 기준으로 프로젝트를 안정적으로 관리하며, 체계적 프레임으로 혼란을 정리합니다.',
             improvements: '감정 공감 부족이 팀 분위기를 경직시킬 수 있으므로, 유연한 대화와 피드백 방식을 익혀야 합니다.',
             compatiblePM: '선배 마라탕사주세요 형',
@@ -651,11 +715,11 @@ function getPMTypeByPattern(pattern) {
             incompatiblePMReason: '즉흥적 실행력과 철저한 계획이 충돌하기 때문이에요!',
             incompatiblePMImage: 'dm_10.png',
             image: 'dm_20.png'
-        },
+            },
         'ABBAB': {
             pmType: '이븐하게 익었어요 형',
-            simpleIntro: '균형 잡힌 사고로 갈등을 조율하는 중재형 PM',
-            detailedIntro: '감정과 논리의 균형을 유지하며 상황을 조화롭게 이끌지만, 결단이 약할 수 있음.',
+            simpleIntro: '감성과 논리 반반 섞은 인간 미디엄레어',
+            detailedIntro: '감성 50, 논리 50의 밸런스 요리사. 극단 대신 조율로 그림을 완성한다.',
             strengths: '감정과 논리를 고르게 조율해 갈등을 부드럽게 해결하며, 협업의 조화를 이끌어내는 안정적 리더십을 가집니다.',
             improvements: '지나치게 중립적인 태도가 결정력을 약화시킬 수 있어, 때로는 단호한 판단이 필요합니다.',
             compatiblePM: '간디작살 형',
@@ -665,11 +729,11 @@ function getPMTypeByPattern(pattern) {
             incompatiblePMReason: '감정적 에너지가 부담스러울 수 있어요!',
             incompatiblePMImage: 'dm_1.png',
             image: 'dm_19.png'
-        },
+            },
         'ABBBA': {
             pmType: '괜차나...닝닝닝닝 형',
-            simpleIntro: '감정 안정과 공감력을 가진 온화형 PM',
-            detailedIntro: '공감 능력이 높고 부드러운 리더십을 통해 팀의 분위기를 안정시킴. 그러나 결단력이 부족할 수 있음.',
+            simpleIntro: '감정 온도 조절 마스터, 팀 멘탈 지킴이',
+            detailedIntro: '팀 감정선 안정화 담당자. 갈등도 말랑하게 만들어 숨 고르게 해준다.',
             strengths: '팀의 감정 변화를 세심히 살피며 긴장을 완화하고, 부드러운 소통으로 안정적인 협업 분위기를 만듭니다.',
             improvements: '갈등 상황에서 결정을 미루면 리더십이 약해질 수 있으므로, 명확한 기준과 결단력을 강화해야 합니다.',
             compatiblePM: '낋여오거라 형',
@@ -679,11 +743,11 @@ function getPMTypeByPattern(pattern) {
             incompatiblePMReason: '논리 중심의 커뮤니케이션이 부담스러울 수 있어요!',
             incompatiblePMImage: 'dm_29.png',
             image: 'dm_18.png'
-        },
+            },
         'ABBBB': {
             pmType: '간디작살 형',
-            simpleIntro: '내면의 평정심과 통찰력을 갖춘 사색형 PM',
-            detailedIntro: '조용하지만 통찰력 있는 리더십으로 팀의 중심을 잡음. 다만 외향적 추진력은 약함.',
+            simpleIntro: '조용하지만 핵심만 치는 평정의 달인',
+            detailedIntro: '말수는 적어도 한 마디는 핵심. 생각의 깊이로 팀 중심을 차분히 붙잡는다.',
             strengths: '깊은 통찰력과 평정심으로 팀의 균형을 잡으며, 차분한 리더십으로 신뢰와 안정감을 만들어냅니다.',
             improvements: '소극적인 표현으로 존재감이 약해질 수 있으니, 주도적으로 의견을 제시하는 연습이 필요합니다.',
             compatiblePM: '이븐하게 익었어요 형',
@@ -693,12 +757,11 @@ function getPMTypeByPattern(pattern) {
             incompatiblePMReason: '과한 에너지가 집중을 깨기 때문이에요!',
             incompatiblePMImage: 'dm_9.png',
             image: 'dm_17.png'
-        },
-        // BAAAA 패턴들
+            },
         'BAAAA': {
             pmType: '선배 마라탕 사주세요 형',
-            simpleIntro: '실무 감각과 친화력을 갖춘 실행형 PM',
-            detailedIntro: '경험을 바탕으로 현실적 문제 해결에 강하지만, 전략적 사고는 약함.',
+            simpleIntro: '친화력으로 일도, 밥도 해결하는 인간 마라탕',
+            detailedIntro: '현장감각+친화력으로 딜 무드 잡는 실무형. “제가 먼저 손대볼게요”가 입버릇.',
             strengths: '실무 중심의 판단과 행동력으로 문제를 빠르게 해결하며, 현실적인 접근으로 팀의 신뢰를 단단히 쌓습니다.',
             improvements: '단기 실행에 집중하다 보면 전략적 시야가 약해질 수 있으니, 장기 계획 수립 능력을 함께 길러야 합니다.',
             compatiblePM: '이건 첫번째 레슨 형',
@@ -708,11 +771,11 @@ function getPMTypeByPattern(pattern) {
             incompatiblePMReason: '지나치게 냉정한 접근이 부담스러울 수 있어요!',
             incompatiblePMImage: 'dm_23.png',
             image: 'dm_16.png'
-        },
+            },
         'BAAAB': {
             pmType: '형이 왜 거기서 나와...? 형',
-            simpleIntro: '즉흥 대응력과 위기 대처력이 뛰어난 상황형 PM',
-            detailedIntro: '돌발 상황에서도 빠른 판단으로 문제를 해결하지만, 장기적 계획에는 약함.',
+            simpleIntro: '위기 때마다 순간이동하는 문제해결 요정',
+            detailedIntro: '이슈 뜨면 어디선가 등장해 불 끄고 사라지는 해결사. 임기응변 스피드가 미친다.',
             strengths: '빠른 판단력과 순발력으로 예기치 못한 문제를 즉시 해결하며, 위기 속에서도 유연하게 대응하는 능력을 보입니다.',
             improvements: '즉흥적 해결에 익숙해 장기 전략이 부족할 수 있으니, 계획 수립과 지속적 방향 설정에 힘써야 합니다.',
             compatiblePM: '나는 아직 배고프다 형',
@@ -722,11 +785,11 @@ function getPMTypeByPattern(pattern) {
             incompatiblePMReason: '즉흥성과 계획형이 충돌하기 때문이에요!',
             incompatiblePMImage: 'dm_7.png',
             image: 'dm_15.png'
-        },
+            },
         'BAABA': {
             pmType: '칠가이 형',
-            simpleIntro: '냉정한 판단력과 센스를 갖춘 현실주의형 PM',
-            detailedIntro: '상황을 객관적으로 분석하며, 감정에 휘둘리지 않고 결정을 내림. 다만 피드백이 차갑게 들릴 수 있음.',
+            simpleIntro: '감정 OFF, 현실 모드 ON',
+            detailedIntro: '감정필터 OFF, 현실필터 ON. 쿨하게 본질만 뽑아 결론까지 스르륵.',
             strengths: '차분하고 명확한 사고로 복잡한 문제를 효율적으로 정리하며, 감정에 흔들리지 않는 결단력으로 위기를 극복합니다.',
             improvements: '직설적인 피드백이 냉정하게 들릴 수 있으므로, 부드러운 언어와 공감적 소통을 병행하는 것이 좋습니다.',
             compatiblePM: '무한도전 형',
@@ -736,11 +799,11 @@ function getPMTypeByPattern(pattern) {
             incompatiblePMReason: '서로 주도권이 부딪힐 수 있어요!',
             incompatiblePMImage: 'dm_8.png',
             image: 'dm_14.png'
-        },
+            },
         'BAABB': {
             pmType: '어서오고~ 형',
-            simpleIntro: '따뜻함과 친근함으로 팀을 이끄는 감성형 PM',
-            detailedIntro: '부드럽고 다정한 리더십으로 구성원을 포용하지만, 목표 집중도가 떨어질 때가 있음.',
+            simpleIntro: '들어오자마자 다들 친구 되는 인간 온기버튼',
+            detailedIntro: '새 팀원도 5분 만에 편해지는 온기 담당. 말투부터 케어까지 소프트 파워 만렙.',
             strengths: '팀원의 감정을 세심히 살피며 공감과 포용으로 신뢰를 쌓고, 긍정적인 협업 분위기를 조성하는 능력이 뛰어납니다.',
             improvements: '인간관계에 집중하다 보면 목표 의식이 약해질 수 있어, 명확한 성과 기준을 병행하는 태도가 필요합니다.',
             compatiblePM: '두뇌풀가동 형',
@@ -750,11 +813,11 @@ function getPMTypeByPattern(pattern) {
             incompatiblePMReason: '과도한 변화가 피로하게 느껴질 수 있어요!',
             incompatiblePMImage: 'dm_27.png',
             image: 'dm_13.png'
-        },
+            },
         'BABAA': {
             pmType: '나는 아직 배고프다 형',
-            simpleIntro: '끊임없는 성장과 발전을 추구하는 도전형 PM',
-            detailedIntro: '자기계발에 열정적이며 새로운 기회를 끊임없이 찾는 추진형 리더. 그러나 완성도보다는 속도를 중시함.',
+            simpleIntro: '성장 안 하면 밥맛이 없어',
+            detailedIntro: '오늘 성장, 내일 또 성장. 러닝·도전·피봇이 루틴인 업그레이드 중독자.',
             strengths: '강한 성장 욕구와 추진력으로 팀을 끌어올리며, 끊임없이 개선과 도전을 추구해 프로젝트의 변화를 이끌어냅니다.',
             improvements: '속도에 집중하다 보면 세부 완성도가 떨어질 수 있어, 실행 후 피드백과 디테일 검증이 중요합니다.',
             compatiblePM: '알쓸신잡 형',
@@ -764,11 +827,11 @@ function getPMTypeByPattern(pattern) {
             incompatiblePMReason: '안정 지향성과 도전 욕구가 상반되기 때문이에요!',
             incompatiblePMImage: 'dm_2.png',
             image: 'dm_12.png'
-        },
+            },
         'BABAB': {
             pmType: '럭키비키 형',
-            simpleIntro: '긍정과 낙관으로 팀을 이끄는 희망형 PM',
-            detailedIntro: '어려운 상황에서도 긍정적인 시각을 유지하며, 주변 사람들에게 밝은 에너지를 전함. 다만 현실적 디테일에는 약할 수 있음.',
+            simpleIntro: '운도 실력이라 믿는 인간 긍정봇',
+            detailedIntro: '“될 놈은 된다” 마인드의 인간 비타민. 구름끼어도 햇살 각도 찾아내는 낙관왕.',
             strengths: '위기 속에서도 낙관적인 태도로 팀의 사기를 북돋우며, 긍정의 힘으로 협업 분위기를 유연하고 따뜻하게 만들어갑니다.',
             improvements: '낙관적 시선이 현실적 실행을 흐릴 수 있어, 세부 관리와 실질적인 계획 수립에 더 집중할 필요가 있습니다.',
             compatiblePM: '침착맨 형',
@@ -778,11 +841,11 @@ function getPMTypeByPattern(pattern) {
             incompatiblePMReason: '변화 속도에 온도차가 크기 때문이에요!',
             incompatiblePMImage: 'dm_2.png',
             image: 'dm_11.png'
-        },
+            },
         'BABBA': {
             pmType: '불속성 형',
-            simpleIntro: '빠르고 강한 실행력을 갖춘 추진형 PM',
-            detailedIntro: '목표를 세우면 끝까지 밀어붙이는 추진력의 상징. 다만 감정 배려는 부족함.',
+            simpleIntro: '실행력만 보면 프로젝트 파이터',
+            detailedIntro: '스타트 신호 들리면 바로 풀스로틀. 일단 박고 보는 추진력으로 길을 만든다.',
             strengths: '압도적인 추진력과 결단력으로 프로젝트를 신속하게 완수하며, 위기 상황에서도 주저하지 않고 방향을 제시합니다.',
             improvements: '실행 중심 태도가 감정적 균형을 해칠 수 있어, 팀원의 의견을 경청하고 공감하는 노력이 필요합니다.',
             compatiblePM: '관짝소년단 형',
@@ -792,11 +855,11 @@ function getPMTypeByPattern(pattern) {
             incompatiblePMReason: '즉시 행동을 요구하는 스타일과 맞지 않아요!',
             incompatiblePMImage: 'dm_25.png',
             image: 'dm_10.png'
-        },
+            },
         'BABBB': {
             pmType: '핵인싸 형',
-            simpleIntro: '관계 중심의 네트워커형 PM',
-            detailedIntro: '사람들과의 소통이 활발하고 분위기를 살리는 능력이 뛰어나지만, 일정 관리엔 약함.',
+            simpleIntro: '네트워크로 세상 다 아는 인간 링크드인',
+            detailedIntro: '커피 챗부터 밥 약속까지 네트워크가 망처럼. 사람 연결로 기회도 같이 당겨온다.',
             strengths: '유쾌한 소통과 친화력으로 협업 분위기를 이끌고, 외부 네트워크를 활용해 팀의 기회를 확장시킬 수 있습니다.',
             improvements: '친화력에 치중하다 보면 일정 관리가 느슨해질 수 있어, 체계적인 시간 관리 습관을 유지해야 합니다.',
             compatiblePM: '두뇌풀가동 형',
@@ -806,12 +869,11 @@ function getPMTypeByPattern(pattern) {
             incompatiblePMReason: '과한 에너지가 집중을 깨기 때문이에요!',
             incompatiblePMImage: 'dm_17.png',
             image: 'dm_9.png'
-        },
-        // BBAAAA 패턴들
+            },
         'BBAAA': {
             pmType: '알파메일 형',
-            simpleIntro: '카리스마와 추진력을 갖춘 리더형 PM',
-            detailedIntro: '명확한 기준과 빠른 판단으로 팀을 이끄는 전략적 리더. 감정적 배려는 부족할 수 있음.',
+            simpleIntro: '리더십도 스피드도 MAX, 카리스마 과다',
+            detailedIntro: '“일단 가자” 한 마디에 보드가 돈다. 기준 선명, 결단 빠른 드라이브 리더.',
             strengths: '탁월한 판단력과 추진력으로 목표를 신속히 달성하고, 명확한 기준으로 프로젝트를 체계적으로 이끌어갑니다.',
             improvements: '리더십이 강할수록 팀 의견이 묵살될 수 있으니, 감정적 유연성과 경청 태도를 함께 기르는 것이 중요합니다.',
             compatiblePM: '싹싹김치 형',
@@ -821,11 +883,11 @@ function getPMTypeByPattern(pattern) {
             incompatiblePMReason: '서로 주도권이 부딪힐 수 있어요!',
             incompatiblePMImage: 'dm_14.png',
             image: 'dm_8.png'
-        },
+            },
         'BBAAB': {
             pmType: '두뇌풀가동 형',
-            simpleIntro: '논리와 구조 중심의 전략형 PM',
-            detailedIntro: '객관적 분석과 합리적 판단을 기반으로 체계적으로 일하지만, 감정적 유연성은 부족함.',
+            simpleIntro: '생각의 CPU 풀로드 중',
+            detailedIntro: '가설-검증-정리의 3콤보로 판 깔고 가는 타입. 데이터로 방향판 흔들림 없이 직진.',
             strengths: '분석력과 데이터 기반 사고로 명확한 방향을 제시하고, 복잡한 문제도 체계적으로 해결하는 전략적 능력을 가집니다.',
             improvements: '감정적 교류가 부족하면 팀의 몰입이 떨어질 수 있으므로, 따뜻한 피드백과 공감 표현을 강화할 필요가 있습니다.',
             compatiblePM: '무야호 형',
@@ -835,11 +897,11 @@ function getPMTypeByPattern(pattern) {
             incompatiblePMReason: '즉흥성과 논리가 충돌하기 때문이에요!',
             incompatiblePMImage: 'dm_1.png',
             image: 'dm_7.png'
-        },
+            },
         'BBABA': {
             pmType: '알파메일 형',
-            simpleIntro: '기준과 프로세스를 중시하는 현실주의형 PM',
-            detailedIntro: '감정보다는 효율과 성과를 우선하며, 실용적 사고로 팀을 운영함. 그러나 인간적 유연성은 부족함.',
+            simpleIntro: '기준 없으면 못 살아, 룰러 인간',
+            detailedIntro: '감정보다 규칙, 감성보다 프로세스. ‘근거 pls?’가 자동으로 나오는 실무 현실주의자.',
             typeDescription: '기준과 프로세스를 중시하는 현실주의형 PM',
             strengths: '명확한 기준과 프로세스로 일관성 있는 결과를 내며, 감정보다 성과를 중시해 프로젝트의 효율을 극대화합니다.',
             improvements: '공감 능력이 부족해 조직 내 유연성이 떨어질 수 있으니, 감정적 소통을 통해 리더십의 온도를 높여야 합니다.',
@@ -850,11 +912,11 @@ function getPMTypeByPattern(pattern) {
             incompatiblePMReason: '즉흥적 감정형과 기준 중심형이 충돌하기 때문이에요!',
             incompatiblePMImage: 'dm_1.png',
             image: 'dm_6.png'
-        },
+            },
         'BBABB': {
             pmType: '싹싹김치 형',
-            simpleIntro: '깔끔한 소통과 정리력을 갖춘 커뮤니케이터형 PM',
-            detailedIntro: '명확한 언어와 체계적 정리로 협업 효율을 높이는 리더. 다만 감정 표현은 서툴 수 있음.',
+            simpleIntro: 'PPT도, 말투도, 인생도 깔끔하게',
+            detailedIntro: '말은 또렷, 문서는 또박. 정리 한 번이면 회의록이 데크가 되는 깔끔미 장인.',
             strengths: '뛰어난 정리력과 커뮤니케이션 능력으로 복잡한 프로젝트를 명확하게 정리하고, 팀의 방향성을 안정적으로 이끕니다.',
             improvements: '지나친 논리 중심 접근은 차가워 보일 수 있어, 공감과 따뜻한 피드백을 병행하는 노력이 필요합니다.',
             compatiblePM: '알파메일 형',
@@ -864,11 +926,11 @@ function getPMTypeByPattern(pattern) {
             incompatiblePMReason: '감정 과다형 에너지를 버거워하기 때문이에요!',
             incompatiblePMImage: 'dm_4.png',
             image: 'dm_5.png'
-        },
+            },
         'BBBAA': {
             pmType: '무야호 형',
-            simpleIntro: '긍정 에너지로 팀을 이끄는 분위기메이커형 PM',
-            detailedIntro: '밝고 유쾌하며 주변을 웃게 하지만 체계적 사고엔 약함.',
+            simpleIntro: '팀 분위기 올릴 땐 역시 이 형이 무야~호!',
+            detailedIntro: '회의실에 들어오는 순간 텐션상승 버튼 ON. 긍정 드립으로 팀 템포를 끌어올린다.',
             strengths: '유쾌한 태도와 긍정 에너지로 팀의 긴장을 풀어주며, 어려운 상황에서도 분위기를 전환해 협업 효율을 높입니다.',
             improvements: '낙관적인 태도에만 의존하면 실행력이 떨어질 수 있으므로, 구체적 목표와 계획 수립에 집중할 필요가 있습니다.',
             compatiblePM: '두뇌풀가동 형',
@@ -878,11 +940,11 @@ function getPMTypeByPattern(pattern) {
             incompatiblePMReason: '감정 표현이 과도하게 느껴질 수 있어요!',
             incompatiblePMImage: 'dm_5.png',
             image: 'dm_4.png'
-        },
+            },
         'BBBAB': {
             pmType: '나니가스키 형',
-            simpleIntro: '감정선이 깊고 인간미 넘치는 감성형 PM',
-            detailedIntro: '공감력이 높고 팀 분위기를 따뜻하게 만들지만, 구조적 사고는 다소 약함.',
+            simpleIntro: '감정선에 와이파이 꽂힌 인간 공감기기',
+            detailedIntro: '사람 온도에 민감한 감성 스캐너. 팀 마음 먼저 읽고 공감으로 흐름을 부드럽게 만든다.',
             strengths: '높은 공감력과 몰입력을 바탕으로 팀원들의 신뢰를 얻고, 감정적인 유대감을 통해 협업 분위기를 부드럽게 이끍니다.',
             improvements: '감정 중심의 판단으로 논리적 근거가 약해질 수 있어, 문제를 구조적으로 분석하는 습관이 필요합니다.',
             compatiblePM: '이건 첫번째 레슨 형',
@@ -892,11 +954,11 @@ function getPMTypeByPattern(pattern) {
             incompatiblePMReason: '강한 리더십이 위압적으로 느껴질 수 있어요!',
             incompatiblePMImage: 'dm_8.png',
             image: 'dm_3.png'
-        },
+            },
         'BBBBA': {
             pmType: '개미는 뚠뚠 형',
-            simpleIntro: '꾸준함과 성실함으로 신뢰를 쌓는 안정형 PM',
-            detailedIntro: '목표를 향해 묵묵히 나아가며 팀 내 신뢰를 형성함. 새로운 시도엔 다소 보수적일 수 있음.',
+            simpleIntro: '오늘도 성실 근무 중... 인생은 루틴이다',
+            detailedIntro: '오늘도 체크리스트에 체크-체크. 조용히 꾸준히, 믿고 맡기는 팀의 기본기 담당.',
             strengths: '꾸준한 실행력과 책임감으로 팀의 신뢰를 얻으며, 장기적인 프로젝트에서도 안정적인 결과를 만들어내는 힘이 있습니다.',
             improvements: '안정에 집중하다 보면 창의적 접근이 부족할 수 있어, 새로운 시도를 적극적으로 받아들이는 태도가 필요합니다.',
             compatiblePM: '멈춰! 형',
@@ -906,11 +968,11 @@ function getPMTypeByPattern(pattern) {
             incompatiblePMReason: '변화 속도가 맞지 않아요!',
             incompatiblePMImage: 'dm_11.png',
             image: 'dm_2.png'
-        },
+            },
         'BBBBB': {
             pmType: '멈춰! 형',
-            simpleIntro: '감정과 직감을 먼저 따르는 즉흥형 PM',
-            detailedIntro: '열정이 넘치고 진심이 깊지만 감정의 진폭이 커서 조급해질 때가 있음. 빠르게 반응하고 팀을 이끄는 에너지형 리더.',
+            simpleIntro: '감정 먼저 폭주, 논리는 나중 탑승',
+            detailedIntro: '감정이 먼저 튀지만 그게 또 매력. 번뜩이는 직감으로 분위기 스위치 꽂는 하이텐션 리더.',
             strengths: '진심 어린 열정과 빠른 반응력으로 팀의 사기를 끌어올리며, 위기 상황에서도 강한 추진력으로 프로젝트를 이끌어갑니다.',
             improvements: '감정 기복이 판단력에 영향을 미칠 수 있어, 객관성을 유지하며 냉정한 시선을 훈련하는 것이 필요합니다.',
             compatiblePM: '개미는 뚠뚠 형',
@@ -920,7 +982,8 @@ function getPMTypeByPattern(pattern) {
             incompatiblePMReason: '과한 열정이 논리형을 불편하게 할 수 있어요!',
             incompatiblePMImage: 'dm_7.png',
             image: 'dm_1.png'
-        }
+            }
+
     };
     
     // 패턴 검증
