@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PM 듬이의 하루 - 챗봇</title>
+    <link rel="stylesheet" href="css/style.css">
+    <link rel="stylesheet" href="css/chatbot.css">
+</head>
+<body>
+    <div class="main-container">
+        <div class="app-card chatbot-card">
+            <!-- 진행 상황 표시 -->
+            <div class="progress-section">
+                <div class="progress-container">
+                    <div class="progress-bar">
+                        <div class="progress-segment" data-step="1">1</div>
+                        <div class="progress-segment" data-step="2">2</div>
+                        <div class="progress-segment" data-step="3">3</div>
+                        <div class="progress-segment" data-step="4">4</div>
+                        <div class="progress-segment" data-step="5">5</div>
+                    </div>
+                </div>
+                <div class="time">09:00 AM</div>
+            </div>
+            
+            <!-- 상황 설명 -->
+            <div class="scenario-section">
+                <div class="scenario-text">
+                    <p class="scenario-title">오마이갓! 아침부터..</p>
+                    <p class="scenario-description">
+                        아침에 출근을 하니 우리 회사 상품의 매출이 급감했다는 보고를 받았다. 빠르게 해결하지 않으면 큰 손해를 입을 수도 있는 상황....! 문제의 이유를 어떻게 찾아볼까?
+                    </p>
+                </div>
+            </div>
+            
+            <!-- 캐릭터와 배경 이미지 -->
+            <div class="character-section">
+                <div class="character-container">
+                    <img src="images/avatars/char4.png" alt="PM 듬이" class="character-image">
+                </div>
+            </div>
+            
+            <!-- 선택 버튼들 -->
+            <div class="choices-section" id="initialChoices">
+                <button class="choice-button" data-choice="1">
+                    최근 제품을 직접 써보면서 어디서 불편함이 느껴지는지 감을 잡아보자!
+                </button>
+                <button class="choice-button" data-choice="2">
+                    데이터를 먼저 확인해서 어떤 단계에서 이탈이 발생했는지 분석해보자! 
+                </button>
+            </div>
+            
+            <!-- 이유 입력 프롬프트 창 (숨김) -->
+            <div class="input-prompt-section" id="inputPrompt" style="display: none;">
+                <div class="prompt-box">
+                    <p class="prompt-text">선택한 선택지가 여기에 표시됩니다.</p>
+                    <div class="input-container">
+                        <input type="text" id="reasonInput" placeholder="이유를 입력하면, 나만의 PM 유형 분석 완료!" class="reason-input">
+                    </div>
+                    <div class="button-row">
+                        <button class="back-btn" id="backToActions">← 돌아가기</button>
+                        <button class="submit-btn" id="submitReason">다음으로→</button>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- 로딩 표시 (숨김) -->
+            <div class="loading-section" id="loadingSection" style="display: none;">
+                <div class="loading-spinner"></div>
+                <p class="loading-text">듬이가 생각 중...</p>
+            </div>
+        </div>
+    </div>
+    
+    <!-- <script src="js/load-env.js"></script> -->
+    <script src="js/chatbot.js"></script>
+</body>
+</html>

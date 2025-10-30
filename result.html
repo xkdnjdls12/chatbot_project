@@ -1,0 +1,179 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PM 듬이의 하루 - 결과</title>
+    <link rel="stylesheet" href="css/style.css">
+    <link rel="stylesheet" href="css/result.css">
+    <style>
+        /* 토스트 메시지 애니메이션 */
+        @keyframes slideIn {
+            from {
+                transform: translateX(100%);
+                opacity: 0;
+            }
+            to {
+                transform: translateX(0);
+                opacity: 1;
+            }
+        }
+        
+        @keyframes slideOut {
+            from {
+                transform: translateX(0);
+                opacity: 1;
+            }
+            to {
+                transform: translateX(100%);
+                opacity: 0;
+            }
+        }
+        
+        .success-toast, .error-toast {
+            animation: slideIn 0.3s ease;
+        }
+    </style>
+</head>
+<body>
+    <div class="result-container">
+        <div class="result-card">
+            <!-- 결과 헤더 -->
+            <div class="result-header">
+                <h2>당신의 유형은</h2>
+                <h1 class="pm-type">알파메일 PM</h1>
+            </div>
+            
+            <!-- 캐릭터 이미지 -->
+            <div class="character-section">
+                <img src="images/avatars/char4.png" alt="PM 듬이" class="result-character">
+            </div>
+            
+            <!-- 타입 요약 -->
+            <div class="type-summary">
+                <h3>불필요한 감정소모는 <span class="highlight-red">NO!</span></h3>
+                <p class="type-description">모든 일엔 기준과 프로세스가 있어야 한다고 믿는 PM계의 냉철한 현실주의자.</p>
+            </div>
+            
+            <!-- 저장하고 공유하기 버튼 -->
+            <div class="save-button-section">
+                <button class="action-btn primary" onclick="saveAndShare()">내 유형 저장하고 공유하기</button>
+                <button class="retry-btn" onclick="retakeTest()" title="테스트 다시하기">↻</button>
+            </div>
+            
+            <!-- 상세 분석 -->
+            <div class="analysis-section">
+                <!-- AI 맞춤 분석 -->
+                <div class="analysis-box ai-analysis">
+                    <h4>AI 맞춤 분석</h4>
+                    <p>높은 추진력과 결단력을 기반으로 목표를 명확히 설정하고 신속하게 실행하는 성과 중심형 리더십을 보유. 합리적 판단과 실행력을 통해 조직 성과를 극대화하는 데 강점을 지님.</p>
+                </div>
+                
+                <!-- 나만의 강점 -->
+                <div class="analysis-box strengths">
+                    <h4>나만의 강점</h4>
+                    <p>높은 추진력과 결단력을 기반으로 목표를 명확히 설정하고 신속하게 실행하는 성과 중심형 리더십을 보유. 합리적 판단과 실행력을 통해 조직 성과를 극대화하는 데 강점을 지님.</p>
+                </div>
+                
+                <!-- 보완할 부분 -->
+                <div class="analysis-box improvements">
+                    <h4>내가 보완할 부분</h4>
+                    <p>성과 중심 사고로 인해 공감과 피드백 수용이 다소 부족할 수 있음. 팀원 의견 반영과 소통 강화를 통해 리더십 균형 향상이 필요함.</p>
+                </div>
+            </div>
+            
+            <!-- 호환성 섹션 -->
+            <div class="compatibility-section">
+                <div class="compatibility-card">
+                    <h4>잘 어울리는 PM</h4>
+                    <div class="compatibility-character">
+                        <img src="images/avatars/char5.png" alt="싹싹김치 형" class="compatible-image">
+                    </div>
+                    <h5 class="compatible-name">싹싹김치 형</h5>
+                    <p class="compatible-reason">정리력과 커뮤니케이션이 리더십을 보완해줘요!</p>
+                </div>
+                
+                <div class="compatibility-card">
+                    <h4>성향이 다른 PM</h4>
+                    <div class="compatibility-character">
+                        <img src="images/avatars/char6.png" alt="멈춰! 형" class="incompatible-image">
+                    </div>
+                    <h5 class="incompatible-name">멈춰! 형</h5>
+                    <p class="incompatible-reason">서로의 주도권이 부딪할 수 있어요!</p>
+                </div>
+            </div>
+            
+            <!-- 액션 버튼들 -->
+            <div class="action-buttons">
+                <p class="bootcamp-description" id="bootcampDescription">진짜 성장하고 싶다면… 아래 버튼 클릭하기👇</p>
+                <button class="action-btn secondary" onclick="goHomepage()">천재PM부트 홈페이지 구경가기</button>
+            </div>
+        </div>
+    </div>
+    
+    <!-- 공유 팝업 -->
+    <div class="share-popup" id="sharePopup">
+        <div class="share-popup-content">
+            <!-- 팝업 헤더 -->
+            <div class="share-popup-header">
+                <div class="share-header-left">
+                    <span class="share-icon">🔗</span>
+                    <span class="share-title">링크 공유</span>
+                </div>
+                <div class="share-header-right">
+                    <button class="share-close-btn" onclick="closeSharePopup()">×</button>
+                </div>
+            </div>
+            
+            <!-- 공유할 콘텐츠 -->
+            <div class="share-content">
+                <div class="share-thumbnail">
+                    <img id="shareCharacterImage" src="images/avatars/char4.png" alt="PM 듬이">
+                </div>
+                <div class="share-info">
+                    <h3 id="shareTitle">나만의 PM 유형은?</h3>
+                    <div class="share-url">
+                        <span id="shareUrl">https://example.com/result</span>
+                        <div class="share-url-actions">
+                            <button class="url-action-btn" onclick="copyShareUrl()" title="링크 복사">📋</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- 공유 방법 -->
+            <div class="share-methods">
+                <h4>공유 방법</h4>
+                <div class="share-grid">
+                    <button class="share-method-btn" onclick="shareToKakao()">
+                        <div class="share-method-icon">💬</div>
+                        <span>카카오톡</span>
+                    </button>
+                    <button class="share-method-btn" onclick="shareToFacebook()">
+                        <div class="share-method-icon">📘</div>
+                        <span>Facebook</span>
+                    </button>
+                    <button class="share-method-btn" onclick="shareToTwitter()">
+                        <div class="share-method-icon">🐦</div>
+                        <span>Twitter</span>
+                    </button>
+                    <button class="share-method-btn" onclick="shareToInstagram()">
+                        <div class="share-method-icon">📷</div>
+                        <span>Instagram</span>
+                    </button>
+                    <button class="share-method-btn" onclick="shareToNaver()">
+                        <div class="share-method-icon">📝</div>
+                        <span>네이버</span>
+                    </button>
+                    <button class="share-method-btn" onclick="shareToEmail()">
+                        <div class="share-method-icon">📧</div>
+                        <span>이메일</span>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <script src="js/result.js"></script>
+</body>
+</html>
