@@ -255,6 +255,14 @@ user_reasons: ${JSON.stringify(userReasons)}
     const data = await response.json();
     console.log('✅ API 응답 데이터:', data);
     
+    // 토큰 사용량 로깅
+    if (data.usage) {
+        console.log(`📊 새로운 LLM 분석 토큰 사용량:`);
+        console.log(`  - 입력 토큰: ${data.usage.prompt_tokens}`);
+        console.log(`  - 출력 토큰: ${data.usage.completion_tokens}`);
+        console.log(`  - 총 토큰: ${data.usage.total_tokens}`);
+    }
+    
     const responseText = data.choices[0].message.content;
     console.log('📝 LLM 응답 텍스트:', responseText);
     
@@ -382,6 +390,14 @@ user_reasons: []
     const data = await response.json();
     console.log('✅ API 응답 데이터:', data);
     
+    // 토큰 사용량 로깅
+    if (data.usage) {
+        console.log(`📊 이유 0개 전용 분석 토큰 사용량:`);
+        console.log(`  - 입력 토큰: ${data.usage.prompt_tokens}`);
+        console.log(`  - 출력 토큰: ${data.usage.completion_tokens}`);
+        console.log(`  - 총 토큰: ${data.usage.total_tokens}`);
+    }
+    
     const responseText = data.choices[0].message.content;
     console.log('📝 LLM 응답 텍스트:', responseText);
     
@@ -418,8 +434,8 @@ function getFixedFeedback(choices) {
     if (!choices || choices.length === 0) {
         console.warn('⚠️ 선택지가 없습니다. 기본 유형을 반환합니다.');
         return {
-            pmType: '알파메일 PM',
-            simpleIntro: '불필요한 감정소모는 NO!',
+            pmType: '오류 PM',
+            simpleIntro: '오류',
             detailedIntro: '모든 일엔 기준과 프로세스가 있어야 한다고 믿는 PM계의 냉철한 현실주의자.',
             strengths: '높은 추진력과 결단력을 기반으로 목표를 명확히 설정하고 신속하게 실행하는 성과 중심형 리더십을 보유.',
             improvements: '성과 중심 사고로 인해 공감과 피드백 수용이 다소 부족할 수 있음.',
